@@ -14,10 +14,17 @@ namespace xlsx_reader::types
 	enum class cell_type
 	{
 		empty,
-		boolean,
 		date,
+		time,
+		datetime,
 		inline_string,
-		number,
+		number_bool,
+		number_u32,
+		number_32,
+		number_u64,
+		number_64,
+		number_float,
+		number_double,
 		shared_string,
 		formula_string,
 		error
