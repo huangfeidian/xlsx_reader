@@ -4,8 +4,10 @@
 #include <vector>
 #include <unordered_map>
 #include <string_view>
+#include <xlsx_types_forward.h>
+#include <optional>
 
-namespace xlsx_reader::types
+namespace xlsx_reader
 {
 
 
@@ -29,14 +31,28 @@ namespace xlsx_reader::types
 		formula_string,
 		error
 	};
-
+	enum class cell_error
+	{
+		E_NULL,
+		E_DIV_0,
+		E_VALUE,
+		E_REF,
+		E_NAME,
+		E_NUM,
+		E_NA,
+	}
 	enum class calendar
 	{
 		windows_1900,
 		mac_1904
 	};
 
-	std::unordered_map<std::string, int> cell_errocdes;
+	const string& error_to_string(cell_error in_error);
+	cell_error error_from_string(const std::string& in_string);
+
+	std::optional<double> cast_numeric(std::string_view s);
+	std::optional<double> cast_percentage(std::string_view s);
+	std::optional<time>> cast_time(std::string_view s);
 
 	struct time
 	{

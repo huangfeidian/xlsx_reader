@@ -1,3 +1,5 @@
+#pragma once
+
 #include <xlsx_types>
 #include <cstdint>
 namespace xlsx_reader {
@@ -23,15 +25,6 @@ namespace xlsx_reader {
     class cell: public cell_value
     {
     public:
-
-        static const std::unordered_map<std::string, int> error_codes = {
-        {"#NULL!", 0},
-        {"#DIV/0!", 1},
-        {"#VALUE!", 2},
-        {"#REF!", 3},
-        {"#NAME?", 4},
-        {"#NUM!", 5},
-        {"#N/A!", 6}};
         cell(cell&) = default;
         template <typename T>
         T get_value() const;
@@ -46,7 +39,9 @@ namespace xlsx_reader {
         void set_value(const time& _value);
         void set_value(const datetime& _value);
         void set_value(std::string_view _value);
-        void set_value(std::string_view _value, bool infer_type);
+        void from_formula(std::string_view _value);
+        void from_error(std::string_view _value);
+        void infer_value(std::string_view _value);
         cell_type get_type() const;
 
         std::uint32_t get_column() const;

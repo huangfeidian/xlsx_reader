@@ -3,11 +3,12 @@
 #include <ctime>
 #include <cmath>
 #include <charconv>
+#include <vector>
 
-namespace
+namespace xlsx_reader
 {
 using namespace std;
-optional<double> cast_numeric(const string_view &s)
+optional<double> cast_numeric(string_view s)
 {
     double result = 0;
     auto cast_result = from_chars(&s.cbegin(), &s.cend(), result) if (cast_result.ptr != &s.cend())
@@ -20,7 +21,7 @@ optional<double> cast_numeric(const string_view &s)
     }
 }
 
-optional<double> cast_percentage(const string_view &s)
+optional<double> cast_percentage(string_view s)
 {
     if (s.back() == '%s')
     {
@@ -32,9 +33,9 @@ optional<double> cast_percentage(const string_view &s)
     }
 }
 
-optional<xlsx_reader::types::time> cast_time(string_view s)
+optional<time> cast_time(string_view s)
 {
-    xlsx_reader::types::time result;
+    time result;
     std::vector<string_view> time_components;
     std::size_t prev = 0;
     auto colon_index = s.find(':');
@@ -114,17 +115,33 @@ int svtoi(string_view s)
 }
 
 }
-namespace xlsx_reader::xlsx_types
+
+const string& error_to_string(cell_error in_error)
 {
-using namespace std;
-std::unordered_map<std::string, int> cell_errocdes = unordered_map<string, int>{
-    {"#NULL!", 0},
-    {"#DIV/0!", 1},
-    {"#VALUE!", 2},
-    {"#REF!", 3},
-    {"#NAME?", 4},
-    {"#NUM!", 5},
-    {"#N/A!", 6}};
+    const static vector<string> error_strings = {"#NULL!", "#DIV/0!", "#VALUE!", "#REF!", "#NAME?", "#NUM!", "#N/A!"};
+    return error_strings[static_cast<int>(in_error)];
+
+}
+cell_error error_from_string(const std::string& in_string)
+{
+    const static std::unordered_map<std::string, cell_error> cell_errocodes = unordered_map<string, cell_error>{
+    {"#NULL!", cell_error::E_NULL},
+    {"#DIV/0!", cell_error::E_DIV_0},
+    {"#VALUE!", cell_error::E_VALUE},
+    {"#REF!", cell_error::E_REF},
+    {"#NAME?", cell_error::E_NAME},
+    {"#NUM!", cell_error:E_NUM},
+    {"#N/A!", cell_error::E_NA}};
+    auto cur_iter = cell_errocdes.find(in_string);
+    if(cur_iter == cell_errocdes.end())
+    {
+        return cell_error::E_NULL;
+    }
+    else
+    {
+        return cur_iter->second;
+    }
+}
 
 time time::from_number(double raw_time)
 {
