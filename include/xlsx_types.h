@@ -12,7 +12,7 @@ namespace xlsx_reader
 
 
 	using relation_desc = std::tuple<std::string, std::string, std::string>;
-	using sheet_desc = std::tuple<std::string, std::string, std::string>;
+	using sheet_desc = std::tuple<std::string, std::uint32_t, std::string>;
 	enum class cell_type
 	{
 		empty,
@@ -40,7 +40,7 @@ namespace xlsx_reader
 		E_NAME,
 		E_NUM,
 		E_NA,
-	}
+	};
 	enum class calendar
 	{
 		windows_1900,
@@ -52,7 +52,7 @@ namespace xlsx_reader
 
 	std::optional<double> cast_numeric(std::string_view s);
 	std::optional<double> cast_percentage(std::string_view s);
-	std::optional<time>> cast_time(std::string_view s);
+	std::optional<time> cast_time(std::string_view s);
 
 	struct time
 	{

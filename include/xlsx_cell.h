@@ -1,6 +1,6 @@
 #pragma once
 
-#include <xlsx_types>
+#include <xlsx_types.h>
 #include <cstdint>
 namespace xlsx_reader {
     struct cell_value
@@ -10,18 +10,18 @@ namespace xlsx_reader {
         std::string_view _text;
         union
         {
-            std::uint32_t int_u32_v,
-            std::int32_t int_32_v,
-            std::uint64_t int_u64_v,
-            std::int64_t int_64_v,
-            float float_v,
-            double double_v,
-            bool bool_v,
-        }
+            std::uint32_t int_u32_v;
+            std::int32_t int_32_v;
+            std::uint64_t int_u64_v;
+            std::int64_t int_64_v;
+            float float_v;
+            double double_v;
+            bool bool_v;
+        };
         std::uint32_t _row;
         std::uint64_t _column;
 
-    }
+    };
     class cell: public cell_value
     {
     public:
@@ -48,11 +48,11 @@ namespace xlsx_reader {
         std::uint32_t get_row() const;
         std::pair<std::uint32_t, std::uint32_t> get_row_column() const;
         std::string to_string() const;
-
+        cell(uint32_t row_idx, uint32_t col_idx);
         cell &operator=(const cell &rhs);
         bool operator==(const cell &comparand) const;
 
-    }
+    };
     template<>
     bool cell::get_value<bool>() const;
     template<>
