@@ -1,17 +1,14 @@
 #include <miniz.h>
-#include <zip_utils.h>
 #include <iostream>
 #include <filesystem>
 #include <xlsx_utils.h>
 
 using namespace std;
 using namespace std::experimental::filesystem;
+using namespace xlsx_reader;
 
-
-int main(int argc, char** argv)
+int read_manifest(string file_name)
 {
-	/*const string file_name(argv[1]);*/
-	const string file_name("wode.xlsx");
 	auto file_contents = read_zip_to_memory(file_name);
 	for (const auto i : file_contents)
 	{
@@ -41,11 +38,5 @@ int main(int argc, char** argv)
 	
 	auto sheet_relations = read_relations_from_content(file_contents["xl/_rels/workbook.xml.rels"]);
 	string shared_string_path = "xl/sharedStrings.xml";
-	auto share_string_content_iter = file_contents.find(shared_string_path);
-	vector<share_string_type> all_share_strings;
-	if (share_string_content_iter != file_contents.cend())
-	{
-		all_share_strings = read_shared_strings(share_string_content_iter->second);
-	}
 
 }

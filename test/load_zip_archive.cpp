@@ -13,10 +13,9 @@ using std::cout;
 using std::vector;
 using namespace std::experimental::filesystem;
 
-int main(int argc, char* argv[])
+int load_zip_archive(string file_name)
 //int main()
 {
-	const string file_name(argv[1]);
 	//const string file_name("./wode.xlsx");
 	path file_path(file_name);
 	if(!exists(file_path))

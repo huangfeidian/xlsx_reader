@@ -2,7 +2,6 @@
 #include <optional>
 #include <ctime>
 #include <cmath>
-#include <charconv>
 #include <vector>
 
 namespace xlsx_reader
@@ -11,9 +10,12 @@ using namespace std;
 optional<double> cast_numeric(string_view s)
 {
     double result = 0;
-    auto cast_result = from_chars(&s.cbegin(), &s.cend(), result) if (cast_result.ptr != &s.cend())
+	char* result_end = static_cast<char*>(nullptr);
+	string current_str(s);
+	auto cast_result = strtod(&(*current_str.cbegin()), &result_end);
+	if(result_end != &(*current_str.cend()))
     {
-        return {}
+		return {};
     }
     else
     {
@@ -110,10 +112,7 @@ std::tm safe_localtime(std::time_t raw_time)
 }
 int svtoi(string_view s)
 {
-    int result = 0;
-    auto cast_result = from_chars(&s.cbegin(), &s.cend(), result) return result;
-}
-
+	return stoi(string(s));
 }
 
 const string& error_to_string(cell_error in_error)
@@ -124,16 +123,16 @@ const string& error_to_string(cell_error in_error)
 }
 cell_error error_from_string(const std::string& in_string)
 {
-    const static std::unordered_map<std::string, cell_error> cell_errocodes = unordered_map<string, cell_error>{
+    const static std::unordered_map<std::string, cell_error> cell_errorcodes = unordered_map<string, cell_error>{
     {"#NULL!", cell_error::E_NULL},
     {"#DIV/0!", cell_error::E_DIV_0},
     {"#VALUE!", cell_error::E_VALUE},
     {"#REF!", cell_error::E_REF},
     {"#NAME?", cell_error::E_NAME},
-    {"#NUM!", cell_error:E_NUM},
+    {"#NUM!", cell_error::E_NUM},
     {"#N/A!", cell_error::E_NA}};
-    auto cur_iter = cell_errocdes.find(in_string);
-    if(cur_iter == cell_errocdes.end())
+    auto cur_iter = cell_errorcodes.find(in_string);
+    if(cur_iter == cell_errorcodes.end())
     {
         return cell_error::E_NULL;
     }
@@ -222,7 +221,11 @@ double time::to_number() const
 
     return number;
 }
-
+string time::to_string() const
+{
+	return std::to_string(hour)
+		+ ":" + std::to_string(minute) + ":" + std::to_string(second) + ":" + std::to_string(microsecond);
+}
 time time::now()
 {
     std::tm now = safe_localtime(std::time(nullptr));
@@ -302,6 +305,10 @@ int date::to_number(calendar base_date) const
     return days_since_1900;
 }
 
+string date::to_string() const
+{
+	return std::to_string(year) + "/" + std::to_string(month) + "/" + std::to_string(day);
+}
 date date::today()
 {
     std::tm now = safe_localtime(std::time(nullptr));
@@ -387,7 +394,7 @@ int datetime::weekday() const
 
 datetime datetime::from_iso_string(string_view string)
 {
-    xlnt::datetime result(1900, 1, 1);
+    datetime result(1900, 1, 1);
 
     auto separator_index = string.find('-');
     result.year = svtoi(string.substr(0, separator_index));
@@ -414,7 +421,7 @@ std::string datetime::to_iso_string() const
         }
 
         return std::string(length - input_string.size(), '0') + input_string;
-    }
+	};
     return std::to_string(year) + "-" + fill_zero(std::to_string(month)) + "-" + fill_zero(std::to_string(day)) + "T"
         + fill_zero(std::to_string(hour)) + ":" + fill_zero(std::to_string(minute)) + ":" + fill_zero(std::to_string(second)) + "Z";
 }

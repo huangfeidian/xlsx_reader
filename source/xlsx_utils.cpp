@@ -19,6 +19,7 @@ using namespace tinyxml2;
 
 uint32_t column_index_from_string(const string& column_string)
 {
+
 	if (column_string.length() > 3 || column_string.empty())
     {
         return 0;
@@ -42,7 +43,18 @@ uint32_t column_index_from_string(const string& column_string)
 
     return column_index;
 }
-
+pair<uint32_t, uint32_t> row_column_tuple_from_string(const string& tuple_string)
+{
+	//sample input A1
+	uint32_t column_char_size = 0;
+	while (isalpha(tuple_string[column_char_size]))
+	{
+		column_char_size++;
+	}
+	uint32_t column_value = column_index_from_string(tuple_string.substr(0, column_char_size));
+	uint32_t row_value = stoi(tuple_string.substr(column_char_size));
+	return make_pair(row_value, column_value);
+}
 std::string column_string_from_index(uint32_t column_index)
 {
     // these indicies corrospond to A->ZZZ and include all allowed
@@ -171,7 +183,7 @@ vector<sheet_desc> read_sheets_from_workbook(string_view current_content)
 	}
 	return all_sheets;
 }
-vector<string_view> read_shared_strings(string_view current_content)
+vector<string_view> read_shared_string(string_view current_content)
 {
 	vector<string_view> all_share_strings;
 	XMLDocument string_doc;
@@ -188,7 +200,7 @@ vector<string_view> read_shared_strings(string_view current_content)
 	}
 	return all_share_strings;
 }
-vector<vector<cell*>> load_sheet_from_string(string_view input_string, const vector<string_view>& shared_string_table)
+vector<vector<cell*>> load_cells_from_string(string_view input_string, const vector<string_view>& shared_string_table)
 {
 	XMLDocument sheet_doc;
 	vector<vector<cell*>> result;
@@ -203,9 +215,9 @@ vector<vector<cell*>> load_sheet_from_string(string_view input_string, const vec
 		auto cell_node = row_node->FirstChildElement("c");
 		while(cell_node)
 		{
-			uint32_t col_idx = stoi(cell_node->Attribute("r"));
+			uint32_t col_idx = row_column_tuple_from_string(cell_node->Attribute("r")).second;
 			auto cur_cell = new cell(row_index, col_idx);
-			auto current_value = cell_node->FirstChildElement("v")->Value();
+			auto current_value = cell_node->FirstChildElement("v")->GetText();
 			auto type_attr = cell_node->Attribute("t");
 			if(type_attr)
 			{
@@ -229,13 +241,18 @@ vector<vector<cell*>> load_sheet_from_string(string_view input_string, const vec
 				else if(type_attr_v == "n")
 				{
 					//numeric
-					auto double_value = stold(current_value);
+					auto double_value = stod(current_value);
 					cur_cell->set_value(double_value);
 				}
 				else if(type_attr_v == "inlineStr")
 				{
 					// simple_str
 					cur_cell->set_value(current_value);
+				}
+				else if(type_attr_v == "e")
+				{
+					// error
+					cur_cell->from_error(current_value);
 				}
 				else
 				{
@@ -246,7 +263,7 @@ vector<vector<cell*>> load_sheet_from_string(string_view input_string, const vec
 			else
 			{
 				//numeric
-				auto double_value = stold(current_value);
+				auto double_value = stod(current_value);
 				cur_cell->set_value(double_value);
 			}
 
@@ -257,5 +274,6 @@ vector<vector<cell*>> load_sheet_from_string(string_view input_string, const vec
 		result.push_back(current_row_cells);
 		row_node = row_node->NextSiblingElement("row");
 	}
+	return result;
 }
 }

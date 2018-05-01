@@ -2,10 +2,11 @@
 
 #include <xlsx_types.h>
 #include <cstdint>
+#include <ostream>
 namespace xlsx_reader {
     struct cell_value
     {
-        cell_value();
+        cell_value(std::uint32_t row, std::uint32_t column);
         cell_type _type;
         std::string_view _text;
         union
@@ -20,7 +21,8 @@ namespace xlsx_reader {
         };
         std::uint32_t _row;
         std::uint64_t _column;
-
+		cell_value(cell_value& rhs) = default;
+		cell_value& operator=(const cell_value& rhs) = default;
     };
     class cell: public cell_value
     {
@@ -51,6 +53,7 @@ namespace xlsx_reader {
         cell(uint32_t row_idx, uint32_t col_idx);
         cell &operator=(const cell &rhs);
         bool operator==(const cell &comparand) const;
+        friend std::ostream& operator<<(std::ostream& output_steam, const cell& in_cell);
 
     };
     template<>

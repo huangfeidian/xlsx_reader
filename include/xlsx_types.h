@@ -6,7 +6,7 @@
 #include <string_view>
 #include <xlsx_types_forward.h>
 #include <optional>
-
+#include <string>
 namespace xlsx_reader
 {
 
@@ -31,7 +31,7 @@ namespace xlsx_reader
 		formula_string,
 		error
 	};
-	enum class cell_error
+	enum class cell_error: std::uint32_t
 	{
 		E_NULL,
 		E_DIV_0,
@@ -44,15 +44,13 @@ namespace xlsx_reader
 	enum class calendar
 	{
 		windows_1900,
-		mac_1904
+		mac_1904,
 	};
 
-	const string& error_to_string(cell_error in_error);
+	const std::string& error_to_string(cell_error in_error);
 	cell_error error_from_string(const std::string& in_string);
 
-	std::optional<double> cast_numeric(std::string_view s);
-	std::optional<double> cast_percentage(std::string_view s);
-	std::optional<time> cast_time(std::string_view s);
+
 
 	struct time
 	{
@@ -108,6 +106,7 @@ namespace xlsx_reader
 		/// The microsecond
 		/// </summary>
 		int microsecond;
+		std::string to_string() const;
 	};
 
 	struct date
@@ -126,7 +125,7 @@ namespace xlsx_reader
 		/// <summary>
 		/// Constructs a data from a given year, month, and day.
 		/// </summary>
-		date(int year_, int month_, int day_);
+		date(int year_ = 0, int month_ = 0, int day_ = 0);
 
 		/// <summary>
 		/// Return the number of days between this date and base_date.
@@ -163,6 +162,7 @@ namespace xlsx_reader
 		/// The day
 		/// </summary>
 		int day;
+		std::string to_string() const;
 	};
 
 	struct datetime
@@ -195,7 +195,7 @@ namespace xlsx_reader
 		/// <summary>
 		/// Constructs a datetime from a year, month, and day plus optional hour, minute, second, and microsecond.
 		/// </summary>
-		datetime(int year_, int month_, int day_, int hour_ = 0, int minute_ = 0, int second_ = 0, int microsecond_ = 0);
+		datetime(int year_ = 0, int month_ = 0, int day_ = 0, int hour_ = 0, int minute_ = 0, int second_ = 0, int microsecond_ = 0);
 
 		/// <summary>
 		/// Returns a string represenation of this date and time.
@@ -257,6 +257,9 @@ namespace xlsx_reader
 		/// The microsecond
 		/// </summary>
 		int microsecond;
+
 	};
-	
+	std::optional<double> cast_numeric(std::string_view s);
+	std::optional<double> cast_percentage(std::string_view s);
+	std::optional<time> cast_time(std::string_view s);
 }

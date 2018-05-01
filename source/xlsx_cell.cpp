@@ -3,6 +3,16 @@
 namespace xlsx_reader
 {
     using namespace std;
+	cell_value::cell_value(uint32_t row, uint32_t column)
+	{
+		_row = row;
+		_column = column;
+	}
+	cell::cell(uint32_t in_row, uint32_t in_column)
+		:cell_value(in_row, in_column)
+	{
+
+	}
     void cell::set_value(bool _value)
     {
         _type = cell_type::number_bool;
@@ -46,37 +56,37 @@ namespace xlsx_reader
     void cell::set_value(const date& _value)
     {
         _type = cell_type::date;
-        double_v = data.to_number(base_data());
+        double_v = _value.to_number(calendar::windows_1900);
     }
     void cell::set_value(const datetime& _value)
     {
         _type = cell_type::datetime;
-        double_v = datetime.to_number();
+        double_v = _value.to_number(calendar::windows_1900);
     }
     void cell::set_value(const time& _value)
     {
         _type = cell_type::time;
-        double_v = time.to_number();
+        double_v = _value.to_number();
     }
-    uint32_t get_row() const
+    uint32_t cell::get_row() const
     {
-        return row;
+        return _row;
     }
-    uint32_t get_column() const
+    uint32_t cell::get_column() const
     {
-        return column;
+        return _column;
     }
-    pair<uint32_t, uint32_t> get_row_column() const
+    pair<uint32_t, uint32_t> cell::get_row_column() const
     {
-        return make_pair(row, column);
+        return make_pair(_row, _column);
     }
-    cell_type get_type() const
+    cell_type cell::get_type() const
     {
         return _type;
     }
     bool cell::operator==(const cell& rhs) const
     {
-        if(_type != rhs._type or _text != rhs._text or double_v != rhs.double_v)
+        if(_type != rhs._type || _text != rhs._text || double_v != rhs.double_v)
         {
             return false;
         }
@@ -86,86 +96,100 @@ namespace xlsx_reader
         }
 
     }
-    cell& cell:operator=(const cell& rhs)
+    cell& cell::operator=(const cell& rhs)
     {
         _type = rhs._type;
         _text = rhs._text;
         _row = rhs._row;
         _column = rhs._column;
         double_v = rhs.double_v;
+		return *this;
     }
-
+	template<>
     bool cell::get_value<bool>() const
     {
-        return _bool_v;
+        return bool_v;
     }
+	template<>
     uint32_t cell::get_value<uint32_t>() const
     {
         return int_u32_v;
     }
+	template<>
     int32_t cell::get_value<int32_t>() const
     {
         return int_32_v;
     }
+	template<>
     uint64_t cell::get_value<uint64_t>() const
     {
         return int_u64_v;
     }
+	template<>
     int64_t cell::get_value<int64_t>() const
     {
         return int_64_v;
     }
+	template<>
     float cell::get_value<float>() const
     {
         return float_v;
     }
+	template<>
     double cell::get_value<double>() const
     {
         return double_v;
     }
+	template<>
     string_view cell::get_value<string_view>() const
     {
         return _text;
     }
 
-    string cell::to_string() const
+
+	string cell::to_string() const
+	{
+		switch (_type)
+		{
+		case cell_type::empty:
+			return "";
+		case cell_type::date:
+			return date::from_number(double_v, calendar::windows_1900).to_string();
+		case cell_type::time:
+			return time::from_number(double_v).to_string();
+		case cell_type::datetime:
+			return datetime::from_number(double_v, calendar::windows_1900).to_string();
+		case cell_type::number_32:
+			return std::to_string(int_32_v);
+		case cell_type::number_64:
+			return std::to_string(int_64_v);
+		case cell_type::number_u32:
+			return std::to_string(int_u32_v);
+		case cell_type::number_u64:
+			return std::to_string(int_u64_v);
+		case cell_type::number_float:
+			return std::to_string(float_v);
+		case cell_type::number_double:
+			return std::to_string(double_v);
+		case cell_type::error:
+			return error_to_string(static_cast<cell_error>(int_u32_v));
+		case cell_type::shared_string:
+			return string(_text);
+		case cell_type::formula_string:
+			return string(_text);
+		case cell_type::inline_string:
+			return string(_text);
+		case cell_type::number_bool:
+			return bool_v ? "TRUE" : "FALSE";
+		}
+		return "";
+	};
+    ostream& operator<<(ostream& output_stream, const cell& in_cell)
     {
-        switch(_type)
-        {
-        case cell_type::empty:
-            return "";
-        case cell_type::date:
-            return date.from_number(_double_v).to_string();
-        case cell_type::time:
-            return time.from_number(_double_v).to_string();
-        case cell_type::datetime:
-            return datetime.from_number(_double_v).to_string();
-        case cell_type::number_32:
-            return to_string(int_32_v);
-        case cell_type::number_64:
-            return to_string(int_64_v);
-        case cell_type::number_u32:
-            return to_string(int_u32_v);
-        case cell_type::number_u64:
-            return to_string(int_u64_v);
-        case cell_type::number_float:
-            return to_string(float_v);
-        case cell_type::number_double:
-            return to_string(double_v);
-        case cell_type::error:
-            return error_to_string(int_u32_v);
-        case cell_type::shared_string:
-            return _text;
-        case cell_type::formula_string:
-            return _text;
-        case cell_type::inline_string:
-            return _text;
-        case cell_type::number_bool:
-            return bool_v ? "TRUE": "FALSE";
-        }
-        return ""
+        output_stream<<"row:"<<in_cell._row<<" column:"<<in_cell._column<<" value:"<<in_cell.to_string()<<endl;
+		return output_stream;
     }
-    void infer_value(string_view _value)
+    void cell::infer_value(string_view _value)
     {
         _text = _value;
         if(_value.empty())
@@ -177,7 +201,7 @@ namespace xlsx_reader
             from_formula(_value.substr(1));
             return;
         }
-        if(value.front()=='#' && value.size() > 1)
+        if(_value.front()=='#' && _value.size() > 1)
         {
             from_error(_value.substr(1));
             return;
@@ -185,7 +209,7 @@ namespace xlsx_reader
         auto percentage = cast_numeric(_value);
         if(percentage)
         {
-            double_v = percentage.get();
+            double_v = percentage.value();
             _type = cell_type::number_double;
             return;
         }
@@ -193,18 +217,18 @@ namespace xlsx_reader
         if(cur_time)
         {
             _type = cell_type::number_double;
-            double_v = cur_time.get();
+            double_v = cur_time.value().to_number();
             return;
         }
     }
-    void from_formula(string_view _value)
+    void cell::from_formula(string_view _value)
     {
         _type = cell_type::formula_string;
     }
 
-    void from_error(string_view _value)
+    void cell::from_error(string_view _value)
     {
         _type = cell_type::error;
-        int_u32_v = error_from_string(value);
+        int_u32_v = static_cast<uint32_t>(error_from_string(string(_value)));
     }
 }
