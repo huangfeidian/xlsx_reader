@@ -21,13 +21,13 @@ namespace xlsx_reader {
         };
         std::uint32_t _row;
         std::uint64_t _column;
-		cell_value(cell_value& rhs) = default;
+		cell_value(const cell_value& rhs) = default;
 		cell_value& operator=(const cell_value& rhs) = default;
     };
     class cell: public cell_value
     {
     public:
-        cell(cell&) = default;
+        cell(const cell& rhs) = default;
         template <typename T>
         T get_value() const;
         void set_value(bool _value);

@@ -1,5 +1,6 @@
 #include <xlsx_cell.h>
 #include <xlsx_types.h>
+#include <iostream>
 namespace xlsx_reader
 {
     using namespace std;

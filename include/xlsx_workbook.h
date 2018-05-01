@@ -1,6 +1,7 @@
 #pragma once
 #include <xlsx_worksheet.h>
 #include <memory>
+#include <xlsx_archive.h>
 namespace xlsx_reader
 {
     class workbook
@@ -13,13 +14,13 @@ namespace xlsx_reader
         std::uint32_t get_worksheet_num() const;
         std::string_view workbook_name;
         std::string_view get_workbook_name() const;
-        workbook(std::string_view archive_content);
+        workbook(std::shared_ptr<archive> in_archive);
         friend std::ostream& operator<<(std::ostream& output_stream, const workbook& in_workbook);
     private:
-        std::unordered_map<std::string, std::string> file_contents;
-        void load_workbook_from_string(const std::unordered_map<std::string, std::string>& unziped_archive);
+        std::shared_ptr<archive> archive_content;
+        
         worksheet* load_worksheet(std::string_view _input_string);
-        std::string_view get_sheet_raw_content(std::uint32_t sheet_idx) const;
+        const tinyxml2::XMLDocument* get_sheet_xml(std::uint32_t sheet_idx) const;
         friend class worksheet;
 
 	};
