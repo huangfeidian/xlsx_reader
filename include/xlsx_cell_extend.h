@@ -35,8 +35,8 @@ namespace xlsx_reader
     struct extend_node_type_descriptor
     {
         using ref_detail_t = std::pair<std::string_view, std::string_view>;//这个字段只有在引用类型才会用到
-        using list_detail_t = std::pair<extend_node_type_descriptor*, std::uint32_t>;//这个字段只有在list类型的情况才会被使里面存的是list的成员信息 第二个分量是0的时候代表无限长度
-        using tuple_detail_t = std::vector<extend_node_type_descriptor*>;//这个字段只有在复合类型的情况才会被使里面存的是list的成员信息
+        using list_detail_t = std::tuple<extend_node_type_descriptor*, std::uint32_t, char>;//这个字段只有在list类型的情况才会被使里面存的是list的成员信息 第二个分量是0的时候代表无限长度
+        using tuple_detail_t = std::pair<std::vector<extend_node_type_descriptor*>, char>;//这个字段只有在复合类型的情况才会被使里面存的是list的成员信息
         basic_node_type_descriptor _type;
         std::variant<ref_detail_t, tuple_detail_t, list_detail_t> _type_detail;
         extend_node_type_descriptor();

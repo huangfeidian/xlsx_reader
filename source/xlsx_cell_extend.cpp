@@ -191,6 +191,21 @@ namespace {
                 
                 if(tokens[0] == "list"sv)
                 {
+                    char splitor = ',';
+                    if(grouped_tokens.size() == 3)
+                    {
+                        auto splitor_info = grouped_tokens.back();
+                        grouped_tokens.pop_back();
+                        if(splitor_info.size() != 1)
+                        {
+                            return nullptr;
+                        }
+                        if(splitor_info[0].size() != 1)
+                        {
+                            return nullptr;
+                        }
+                        splitor = splitor_info[0][0];
+                    }
                     if(grouped_tokens.size() != 2)
                     {
                         return nullptr;
@@ -212,14 +227,21 @@ namespace {
                     }
                     else
                     {
-                        return new extend_node_type_descriptor(make_pair(temp_type_result, repeat_times.value()));
+                        return new extend_node_type_descriptor(make_tuple(temp_type_result, repeat_times.value(), splitor));
                     }
 
                 }
                 else
                 {
                     //tuple(xx, xx)
-                    extend_node_type_descriptor::tuple_detail_t result;
+                    vector<extend_node_type_descriptor*> type_vec;
+                    char cur_splitor = ',';
+                    auto splitor_info = grouped_tokens.back();
+                    if(splitor_info.size() == 1 && splitor_info[0].size() == 1)
+                    {
+                        cur_splitor = splitor_info[0][0];
+                        grouped_tokens.pop_back();
+                    }
                     for(const auto & one_grouped_tokens: grouped_tokens)
                     {
                         auto temp_result = parse_type_from_tokens(one_grouped_tokens);
@@ -229,11 +251,11 @@ namespace {
                         }
                         else
                         {
-                            result.push_back(temp_result);
+                            type_vec.push_back(temp_result);
                         }
                         
                     }
-                    return new extend_node_type_descriptor(result);
+                    return new extend_node_type_descriptor(make_pair(type_vec, cur_splitor));
                 }
 
             }
