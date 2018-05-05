@@ -260,7 +260,76 @@ namespace {
 
             }
         }
+    }
+    extend_node_value* parse_value_with_type(const extend_node_type_descriptor* node_type, const cell_value& in_cell_value)
+    {
+        switch(node_type->_type)
+        {
+        case basic_node_type_descriptor::comment:
+            return new extend_node_value();
+        case basic_node_type_descriptor::date:
+            if(in_cell_value._type != cell_type::number_double)
+            {
+                return nullptr;
+            }
+            return new extend_node_value(static_cast<int>(in_cell_value.double_v));
+        case basic_node_type_descriptor::time:
+            if(in_cell_value._type != cell_type::number_double)
+            {
+                return nullptr;
+            }
+            return new extend_node_value(in_cell_value.double_v);
+        case basic_node_type_descriptor::datetime:
+            if(in_cell_value._type != cell_type::number_double)
+            {
+                return nullptr;
+            }
+            return new extend_node_value(in_cell_value.double_v);
+        case basic_node_type_descriptor::string:
+            return new extend_node_value(in_cell_value._text);
+        case basic_node_type_descriptor::number_bool:
+            return new extend_node_value(in_cell_value.bool_v);
+        case basic_node_type_descriptor::number_32:
+            if(in_cell_value._type != cell_type::number_double)
+            {
+                return nullptr;
+            }
+            return new extend_node_value(static_cast<int>(in_cell_value.double_v));
+        case basic_node_type_descriptor::number_u32:
+            if(in_cell_value._type != cell_type::number_double)
+            {
+                return nullptr;
+            }
+            return new extend_node_value(static_cast<uint32_t>(in_cell_value.double_v));
+        case basic_node_type_descriptor::number_64:
+            if(in_cell_value._type != cell_type::number_double)
+            {
+                return nullptr;
+            }
+            return new extend_node_value(static_cast<int64_t>(in_cell_value.double_v));
+        case basic_node_type_descriptor::number_u64:
+            if(in_cell_value._type != cell_type::number_double)
+            {
+                return nullptr;
+            }
+            return new extend_node_value(static_cast<uint64_t>(in_cell_value.double_v));
+        case basic_node_type_descriptor::number_float:
+            if(in_cell_value._type != cell_type::number_double)
+            {
+                return nullptr;
+            }
+            return new extend_node_value(static_cast<float>(in_cell_value.double_v));
+        case basic_node_type_descriptor::number_double:
+            if(in_cell_value._type != cell_type::number_double)
+            {
+                return nullptr;
+            }
+            return new extend_node_value(in_cell_value.double_v);
 
+        }
+    }
+    extend_node_value* parse_value_with_type(const extend_node_type_descriptor* node_type, string_view text)
+    {
         
     }
 }

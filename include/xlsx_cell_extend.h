@@ -61,6 +61,16 @@ namespace xlsx_reader
             double v_double; //for time datetime date double
         };
         std::vector<extend_node_value> v_list;
+        extend_node_value();
+        extend_node_value(bool in_value);
+        extend_node_value(std::uint32_t in_value);
+        extend_node_value(std::int32_t in_value);
+        extend_node_value(std::int64_t in_value);
+        extend_node_value(std::uint64_t in_value);
+        extend_node_value(std::string_view in_value);
+        extend_node_value(float in_value);
+        extend_node_value(double in_value);
+        extend_node_value(const std::vector<extend_node_value>& in_value);
     };
     class extend_node_value_constructor
     {
