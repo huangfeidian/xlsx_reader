@@ -22,6 +22,21 @@ optional<double> cast_numeric(string_view s)
         return result;
     }
 }
+optional<int> cast_int(string_view s)
+{
+    int result = 0;
+	char* result_end = static_cast<char*>(nullptr);
+	string current_str(s);
+	auto cast_result = strtol(&(*current_str.cbegin()), &result_end, 10);
+	if(result_end != &(*current_str.cend()))
+    {
+		return {};
+    }
+    else
+    {
+        return result;
+    }
+}
 
 optional<double> cast_percentage(string_view s)
 {

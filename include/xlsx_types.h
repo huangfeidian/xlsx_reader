@@ -261,5 +261,6 @@ namespace xlsx_reader
 	};
 	std::optional<double> cast_numeric(std::string_view s);
 	std::optional<double> cast_percentage(std::string_view s);
+	std::optional<int> cast_int(std::string_view s);
 	std::optional<time> cast_time(std::string_view s);
 }
