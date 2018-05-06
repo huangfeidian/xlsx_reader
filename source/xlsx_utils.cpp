@@ -83,5 +83,23 @@ string row_column_tuple_to_string(pair<uint32_t, uint32_t> row_column_tuple)
 {
 	return column_string_from_index(row_column_tuple.second) + std::to_string(row_column_tuple.first);
 }
-
+vector<string_view> split_string(string_view input_string, char sep)
+{
+    vector<string_view> tokens;
+    size_t start = 0;
+    size_t end = 0;
+    while((end=input_string.find(sep, start))!=string_view::npos)
+    {
+        if(end != start)
+        {
+            tokens.emplace_back(input_string.substr(start, end - start));
+        }
+        start = end + 1;
+    }
+    if(end != start)
+    {
+        tokens.emplace_back(input_string.substr(start));
+    }
+    return tokens;
+}
 }

@@ -44,6 +44,7 @@ namespace xlsx_reader
         extend_node_type_descriptor(const tuple_detail_t& tuple_detail);
         extend_node_type_descriptor(const list_detail_t& list_detail);
         extend_node_type_descriptor(const ref_detail_t& ref_detail);
+        friend ostream& operator<<(ostream& output_stream, const extend_node_type_descriptor& cur_node);
     };
 
     struct extend_node_value
@@ -60,7 +61,7 @@ namespace xlsx_reader
             float v_float;
             double v_double; //for time datetime date double
         };
-        std::vector<extend_node_value> v_list;
+        std::vector<extend_node_value*> v_list;
         extend_node_value();
         extend_node_value(bool in_value);
         extend_node_value(std::uint32_t in_value);
@@ -70,7 +71,8 @@ namespace xlsx_reader
         extend_node_value(std::string_view in_value);
         extend_node_value(float in_value);
         extend_node_value(double in_value);
-        extend_node_value(const std::vector<extend_node_value>& in_value);
+        extend_node_value(const extend_node_type_descriptor* in_type_desc, std::vector<extend_node_value*> in_value);
+        friend ostream& operator<<(ostream& output_stream, const extend_node_value& cur_node);
     };
     class extend_node_value_constructor
     {
