@@ -9,32 +9,31 @@ namespace xlsx_reader
 using namespace std;
 optional<double> cast_numeric(string_view s)
 {
-    double result = 0;
 	char* result_end = static_cast<char*>(nullptr);
 	string current_str(s);
 	auto cast_result = strtod(&(*current_str.cbegin()), &result_end);
-	if(result_end != &(*current_str.cend()))
+	if(result_end != &current_str.back() + 1)
     {
 		return {};
     }
     else
     {
-        return result;
+        return cast_result;
     }
 }
 optional<int> cast_int(string_view s)
 {
-    int result = 0;
+
 	char* result_end = static_cast<char*>(nullptr);
 	string current_str(s);
 	auto cast_result = strtol(&(*current_str.cbegin()), &result_end, 10);
-	if(result_end != &(*current_str.cend()))
+	if(result_end != &current_str.back() + 1)
     {
 		return {};
     }
     else
     {
-        return result;
+        return cast_result;
     }
 }
 
