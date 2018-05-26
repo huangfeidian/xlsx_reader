@@ -83,6 +83,7 @@ namespace xlsx_reader
         std::optional<extend_node_value> match_node(const cell* in_cell_value);
 
         static extend_node_type_descriptor* parse_type(std::string_view type_string);
+		static extend_node_value* parse_value_with_type(const extend_node_type_descriptor* node_type, std::string_view text);
         static std::optional<extend_node_value> parse_node(const extend_node_type_descriptor* type_desc, const cell_value& v_cell);
     
     };

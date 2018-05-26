@@ -351,7 +351,7 @@ namespace xlsx_reader{
 
         }
     }
-    extend_node_value* parse_value_with_type(const extend_node_type_descriptor* node_type, string_view text)
+    extend_node_value* extend_node_value_constructor::parse_value_with_type(const extend_node_type_descriptor* node_type, string_view text)
     {
         text.remove_prefix(min(text.find_first_not_of(" "), text.size()));
         text.remove_suffix(min(text.find_last_not_of(" "), text.size()) - text.size());
