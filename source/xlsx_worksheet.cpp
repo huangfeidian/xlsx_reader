@@ -84,70 +84,70 @@ vector<cell> load_cells_from_xml(const XMLDocument* input_doc, const vector<stri
 }
 }
 namespace xlsx_reader {
-    using namespace std;
+	using namespace std;
 
-    worksheet::worksheet(const workbook* in_workbook, uint32_t in_sheet_id, string_view in_sheet_name)
-    : _workbook(in_workbook), _sheetId(in_sheet_id), _name(in_sheet_name)
-    {
-        auto the_raw_content = _workbook->get_sheet_xml(in_sheet_id);
-        _cells = load_cells_from_xml(the_raw_content, _workbook->shared_string);
-        row_info.clear();
-        max_rows = 0;
-        max_columns = 0;
-        for(const auto& one_cell : _cells)
-        {
-            uint32_t current_row_id = one_cell.get_row();
-            max_rows = max(current_row_id, max_rows);
-            uint32_t current_column_id = one_cell.get_column();
-            max_columns = max(max_columns, current_column_id);
-            auto cur_row_info = row_info[current_row_id];
-            cur_row_info[current_column_id] = &one_cell;
-        }
-    }
-    const map<uint32_t, const cell*>& worksheet::get_row(uint32_t row_idx) const
-    {
-        return row_info.find(row_idx)->second;
-    }
-    const cell* worksheet::get_cell(uint32_t row_idx, uint32_t column_idx) const
-    {
-        auto row_iter = row_info.find(row_idx);
-        if(row_iter == row_info.end())
-        {
-            return nullptr;
-        }
-        auto column_iter = row_iter->second.find(column_idx);
-        if(column_iter == row_iter->second.end())
-        {
-            return nullptr;
-        }
-        else
-        {
-            return column_iter->second;
-        }
-    }
-    uint32_t worksheet::get_max_row() const
-    {
-        return max_rows;
-    }
-    uint32_t worksheet::get_max_column() const
-    {
-        return max_columns;
-    }
+	worksheet::worksheet(const workbook* in_workbook, uint32_t in_sheet_id, string_view in_sheet_name)
+	: _workbook(in_workbook), _sheetId(in_sheet_id), _name(in_sheet_name)
+	{
+		auto the_raw_content = _workbook->get_sheet_xml(in_sheet_id);
+		_cells = load_cells_from_xml(the_raw_content, _workbook->shared_string);
+		row_info.clear();
+		max_rows = 0;
+		max_columns = 0;
+		for(const auto& one_cell : _cells)
+		{
+			uint32_t current_row_id = one_cell.get_row();
+			max_rows = max(current_row_id, max_rows);
+			uint32_t current_column_id = one_cell.get_column();
+			max_columns = max(max_columns, current_column_id);
+			auto cur_row_info = row_info[current_row_id];
+			cur_row_info[current_column_id] = &one_cell;
+		}
+	}
+	const map<uint32_t, const cell*>& worksheet::get_row(uint32_t row_idx) const
+	{
+		return row_info.find(row_idx)->second;
+	}
+	const cell* worksheet::get_cell(uint32_t row_idx, uint32_t column_idx) const
+	{
+		auto row_iter = row_info.find(row_idx);
+		if(row_iter == row_info.end())
+		{
+			return nullptr;
+		}
+		auto column_iter = row_iter->second.find(column_idx);
+		if(column_iter == row_iter->second.end())
+		{
+			return nullptr;
+		}
+		else
+		{
+			return column_iter->second;
+		}
+	}
+	uint32_t worksheet::get_max_row() const
+	{
+		return max_rows;
+	}
+	uint32_t worksheet::get_max_column() const
+	{
+		return max_columns;
+	}
 	string_view worksheet::get_name() const
 	{
 		return _name;
 	}
-    ostream& operator<<(ostream& output_stream, const worksheet& in_worksheet)
-    {
-        output_stream<<"worksheet name: "<< in_worksheet.get_name()<<", sheet_id: "<<in_worksheet._sheetId<<endl;
-        for(const auto& one_row: in_worksheet.row_info)
-        {
-            output_stream<<"row "<<one_row.first<<" has cells "<< one_row.second.size()<<endl;
-            for(const auto& one_cell: one_row.second)
-            {
-                output_stream<<*(one_cell.second)<<endl;
-            }
-        }
+	ostream& operator<<(ostream& output_stream, const worksheet& in_worksheet)
+	{
+		output_stream<<"worksheet name: "<< in_worksheet.get_name()<<", sheet_id: "<<in_worksheet._sheetId<<endl;
+		for(const auto& one_row: in_worksheet.row_info)
+		{
+			output_stream<<"row "<<one_row.first<<" has cells "<< one_row.second.size()<<endl;
+			for(const auto& one_cell: one_row.second)
+			{
+				output_stream<<*(one_cell.second)<<endl;
+			}
+		}
 		return output_stream;
-    }
+	}
 };
