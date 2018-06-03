@@ -2,6 +2,7 @@
 #include "cell_extend_test.h"
 #include <iostream>
 #include <fstream>
+#include "json_test.h"
 using namespace std;
 using namespace xlsx_reader;
 
@@ -13,6 +14,9 @@ int main(int argc, char** argv)
 	// string output_filename = "workbook.txt";
 	// ofstream output_stream(output_filename);
 	// output_stream <<current_workbook<<endl;
-	test_type_parse();
-	test_type_value_parse();
+	// test_type_parse();
+	// test_type_value_parse();
+	json_test_type_parse();
+	json_test_type_value_parse();
+
 }

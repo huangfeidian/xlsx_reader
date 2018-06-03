@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include <algorithm>
 #include <xlsx_utils.h>
+#include <numeric>
 namespace {
 	using namespace std;
 	string_view strip_parenthesis(string_view input_string)
@@ -22,6 +23,19 @@ namespace {
 		
 		input_string.remove_suffix(input_string.size() - right_idx);
 		return input_string;
+	}
+	string accumulate_string(const vector<string>& str_list)
+	{
+		// return accumulate(str_list.cbegin(), str_list.cend(), "", [](const string& a, const string& b)
+		// {
+		// 	return a + b;
+		// }
+		string result_str;
+		for(const auto& i : str_list)
+		{
+			result_str += i;
+		}
+		return result_str;
 	}
 }
 namespace xlsx_reader{
@@ -630,9 +644,8 @@ namespace xlsx_reader{
 		{
 			return output_stream;
 		}
-
-
 	}
+	
 	extend_node_type_descriptor* extend_node_value_constructor::parse_type(string_view type_string)
 	{
 		auto all_tokens = parse_token_from_type_str(type_string);

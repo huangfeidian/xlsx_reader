@@ -5,6 +5,7 @@
 #include <optional>
 #include <memory>
 #include <variant>
+#include <string>
 namespace xlsx_reader
 {
 	class cell_type_converter
