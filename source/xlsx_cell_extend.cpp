@@ -31,7 +31,13 @@ namespace {
 		// 	return a + b;
 		// }
 		string result_str;
+		int total_size = 0;
 		for(const auto& i : str_list)
+		{
+			total_size += i.size();
+		}
+		result_str.reserve(total_size);
+		for (const auto& i : str_list)
 		{
 			result_str += i;
 		}
