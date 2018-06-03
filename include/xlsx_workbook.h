@@ -16,12 +16,10 @@ namespace xlsx_reader
 		std::string_view get_workbook_name() const;
 		workbook(std::shared_ptr<archive> in_archive);
 		friend std::ostream& operator<<(std::ostream& output_stream, const workbook& in_workbook);
-	private:
+	protected:
 		std::shared_ptr<archive> archive_content;
-		
-		worksheet* load_worksheet(std::string_view _input_string);
 		const tinyxml2::XMLDocument* get_sheet_xml(std::uint32_t sheet_idx) const;
 		friend class worksheet;
-
+		friend class typed_worksheet;
 	};
 }

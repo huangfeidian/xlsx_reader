@@ -77,16 +77,26 @@ namespace xlsx_reader
 		extend_node_value(const extend_node_type_descriptor* in_type_desc, std::string_view in_value);
 		friend std::ostream& operator<<(std::ostream& output_stream, const extend_node_value& cur_node);
 	};
+	class typed_cell
+    {
+	public:
+        const extend_node_value* cur_typed_value;
+		std::uint32_t _row;
+		std::uint32_t _column;
+        typed_cell(std::uint32_t in_row, std::uint32_t in_column, const extend_node_value* in_value);
+        typed_cell(const typed_cell& other) = default;
+        typed_cell& operator=(const typed_cell& other) = default;
+    };
 	class extend_node_value_constructor
 	{
 	public:
 		const extend_node_type_descriptor* type_desc;
 		extend_node_value_constructor(std::string_view type_desc_text);
-		std::optional<extend_node_value> match_node(const cell* in_cell_value);
+		const typed_cell* match_node(const cell* in_cell_value);
 
 		static extend_node_type_descriptor* parse_type(std::string_view type_string);
 		static extend_node_value* parse_value_with_type(const extend_node_type_descriptor* node_type, std::string_view text);
-		static std::optional<extend_node_value> parse_node(const extend_node_type_descriptor* type_desc, const cell_value& v_cell);
+		static typed_cell* parse_node(const extend_node_type_descriptor* type_desc, const cell* v_cell);
 	
 	};
 

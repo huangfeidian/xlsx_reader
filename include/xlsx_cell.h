@@ -20,7 +20,7 @@ namespace xlsx_reader {
 			bool bool_v;
 		};
 		std::uint32_t _row;
-		std::uint64_t _column;
+		std::uint32_t _column;
 		cell_value(const cell_value& rhs) = default;
 		cell_value& operator=(const cell_value& rhs) = default;
 	};

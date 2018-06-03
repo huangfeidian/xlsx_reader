@@ -21,12 +21,13 @@ namespace xlsx_reader
 		const std::map<std::uint32_t, const cell*>& get_row(std::uint32_t) const;
 		const cell* get_cell(std::uint32_t row_idx, std::uint32_t column_idx) const;
 		friend std::ostream& operator<<(std::ostream& output_steam, const worksheet& in_worksheet);
-	private:
+	protected:
 		std::vector<cell> _cells;
 		std::uint32_t max_rows;
 		std::uint32_t max_columns;
 		const workbook* _workbook;
 		std::map<std::uint32_t, std::map<std::uint32_t, const cell*>> row_info;
 		void load_worksheet_from_string(std::string_view _input_string);
+		virtual void after_load_processing(); //处理load完xml之后的后处理
 	};
 }

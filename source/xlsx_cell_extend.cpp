@@ -807,5 +807,84 @@ namespace xlsx_reader{
 	{
 	}
 
+	typed_cell::typed_cell(uint32_t in_row, uint32_t in_column, const extend_node_value* in_value):_row(in_row), _column(in_column), cur_typed_value(in_value)
+	{
 
+	}
+
+    typed_cell* parse_node(const extend_node_type_descriptor* type_desc, const cell* in_cell_value)
+    {
+        if(!in_cell_value)
+        {
+            return nullptr;
+        }
+        switch(type_desc->_type)
+        {
+        case basic_node_type_descriptor::comment:
+        case basic_node_type_descriptor::string:
+            if(in_cell_value->_type != cell_type::inline_string && in_cell_value->_type != cell_type::shared_string)
+            {
+                return nullptr;
+            }
+            return new typed_cell(in_cell_value->_row, in_cell_value->_column, new extend_node_value(in_cell_value->get_value<string_view>()));
+        case basic_node_type_descriptor::date:
+        case basic_node_type_descriptor::datetime:
+        case basic_node_type_descriptor::number_double:
+            if(in_cell_value->_type != cell_type::number_double)
+            {
+                return nullptr;
+            }
+            return new typed_cell(in_cell_value->_row, in_cell_value->_column,new extend_node_value(in_cell_value->get_value<double>()));
+        case basic_node_type_descriptor::number_32:
+            if(in_cell_value->_type != cell_type::number_32)
+            {
+                return nullptr;
+            }
+            return new typed_cell(in_cell_value->_row, in_cell_value->_column, new extend_node_value(in_cell_value->get_value<int>()));
+        case basic_node_type_descriptor::number_u32:
+            if(in_cell_value->_type != cell_type::number_u32)
+            {
+                return nullptr;
+            }
+            return new typed_cell(in_cell_value->_row, in_cell_value->_column,new extend_node_value(in_cell_value->get_value<uint32_t>()));
+        case basic_node_type_descriptor::number_64:
+            if(in_cell_value->_type != cell_type::number_64)
+            {
+                return nullptr;
+            }
+            return new typed_cell(in_cell_value->_row, in_cell_value->_column,new extend_node_value(in_cell_value->get_value<int64_t>()));
+        case basic_node_type_descriptor::number_u64:
+            if(in_cell_value->_type != cell_type::number_u64)
+            {
+                return nullptr;
+            }
+            return new typed_cell(in_cell_value->_row, in_cell_value->_column,new extend_node_value(in_cell_value->get_value<uint64_t>()));
+        case basic_node_type_descriptor::number_bool:
+            if(in_cell_value->_type != cell_type::number_bool)
+            {
+                return nullptr;
+            }
+            return new typed_cell(in_cell_value->_row, in_cell_value->_column,new extend_node_value(in_cell_value->get_value<bool>()));
+        case basic_node_type_descriptor::number_float:
+            if(in_cell_value->_type != cell_type::number_float)
+            {
+                return nullptr;
+            }
+            return new typed_cell(in_cell_value->_row, in_cell_value->_column,new extend_node_value(in_cell_value->get_value<float>()));
+        case basic_node_type_descriptor::list:
+        case basic_node_type_descriptor::tuple:
+        case basic_node_type_descriptor::ref_id:
+            if(in_cell_value->_type != cell_type::inline_string && in_cell_value->_type != cell_type::shared_string)
+            {
+                return nullptr;
+            }
+            return new typed_cell(in_cell_value->_row, in_cell_value->_column,extend_node_value_constructor::parse_value_with_type(type_desc, in_cell_value->get_value<string_view>()));
+        default:
+            return nullptr;
+        }
+    }
+	const typed_cell* extend_node_value_constructor::match_node(const cell* in_cell_value)
+	{
+		return extend_node_value_constructor::parse_node(type_desc, in_cell_value);
+	} 
 }

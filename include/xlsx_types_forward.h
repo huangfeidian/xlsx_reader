@@ -6,4 +6,5 @@ namespace xlsx_reader
 	class worksheet;
 	class workbook;
 	class archive;
+	class typed_worksheet;
 }
