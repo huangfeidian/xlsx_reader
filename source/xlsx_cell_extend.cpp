@@ -166,37 +166,33 @@ namespace xlsx_reader{
 		{
 			if(tokens[0] == string_view("ref"))
 			{
-				if(tokens.size() == 4)
+				// ref(worksheet, int) ref(worksheet, str) ref(workbook, worksheet, str) ref(workbook, worksheet, int)
+				if(tokens[1] != string_view("(") || tokens.back() != string_view(")"))
 				{
-					//ref(worksheet)
-					if(tokens[1] != string_view("(") || tokens[3] != string_view(")"))
-					{
-						return nullptr;
-					}
-					else
-					{
-						auto result = new extend_node_type_descriptor(basic_node_type_descriptor::ref_id);
-						result->_type_detail = make_pair(tokens[2], string_view(""));
-						return result;
-					}
+					return nullptr;
 				}
-				else if(tokens.size() == 5)
+				auto cur_type_desc = tokens[tokens.size() -2];
+				if(cur_type_desc != "str"sv && cur_type_desc != "int"sv)
 				{
-					if(tokens[1] != string_view("(") || tokens[4] != string_view(")"))
-					{
-						return nullptr;
-					}
-					else
-					{
-						auto result = new extend_node_type_descriptor(basic_node_type_descriptor::ref_id);
-						result->_type_detail = make_pair(tokens[2], tokens[3]);
-						return result;
-					}
+					return nullptr;
+				}
+				string_view cur_worksheet;
+				string_view cur_workbook;
+				if(tokens.size() == 5)
+				{
+					cur_worksheet = tokens[2];
+				}
+				else if(tokens.size() == 6)
+				{
+					cur_workbook = tokens[2];
+					cur_worksheet = tokens[3];
 				}
 				else
 				{
 					return nullptr;
 				}
+				auto result = new extend_node_type_descriptor(basic_node_type_descriptor::ref_id);
+				result->_type_detail = make_tuple(cur_workbook, cur_worksheet, cur_type_desc);
 			}
 			else if(tokens[0] == string_view("list") || tokens[0] == string_view("tuple"))
 			{
@@ -232,9 +228,11 @@ namespace xlsx_reader{
 				
 				if(tokens[0] == "list"sv)
 				{
+					
 					char splitor = ',';
 					if(grouped_tokens.size() == 3)
 					{
+						// list(type, len, seperator)
 						auto splitor_info = grouped_tokens.back();
 						grouped_tokens.pop_back();
 						if(splitor_info.size() != 1)
@@ -247,6 +245,7 @@ namespace xlsx_reader{
 						}
 						splitor = splitor_info[0][0];
 					}
+					// list(type, len)
 					if(grouped_tokens.size() != 2)
 					{
 						return nullptr;
@@ -274,7 +273,7 @@ namespace xlsx_reader{
 				}
 				else
 				{
-					//tuple(xx, xx)
+					//tuple(xx, xx, seperator)
 					vector<extend_node_type_descriptor*> type_vec;
 					char cur_splitor = ',';
 					auto splitor_info = grouped_tokens.back();
@@ -483,7 +482,15 @@ namespace xlsx_reader{
 					return nullptr;
 				}
 			case basic_node_type_descriptor::ref_id:
-				return new extend_node_value(node_type, text);
+				auto cur_ref_detail = std::get<extend_node_type_descriptor::ref_detail_t>(node_type->_type_detail);
+				if(std::get<2>(cur_ref_detail) == "str"sv)
+				{
+					return new extend_node_value(node_type, text);
+				}
+				else
+				{
+					return new extend_node_value(static_cast<uint64_t>(current_double_value.value()));
+				}
 			case basic_node_type_descriptor::tuple:
 			{
 				auto cur_tuple_detail = std::get<extend_node_type_descriptor::tuple_detail_t>(node_type->_type_detail);
@@ -603,15 +610,16 @@ namespace xlsx_reader{
 		if(cur_type._type == basic_node_type_descriptor::ref_id)
 		{
 			auto temp_detail = std::get<extend_node_type_descriptor::ref_detail_t>(cur_type._type_detail);
-			if (!temp_detail.second.empty())
+			string_view cur_workbook, cur_worksheet, cur_ref_type;
+			std::tie(cur_workbook, cur_worksheet, cur_ref_type) = temp_detail;
+			if(cur_workbook.empty())
 			{
-				output_stream << "(" << temp_detail.first << "," << temp_detail.second << ")";
+				output_stream<<"(" << cur_worksheet<<", "<<cur_ref_type<<")";
 			}
 			else
 			{
-				output_stream << "(" << temp_detail.first << ")";
+				output_stream<<"(" <<cur_workbook <<", "<< cur_worksheet<<", "<<cur_ref_type<<")";
 			}
-			
 			return output_stream;
 		}
 		else if(cur_type._type == basic_node_type_descriptor::tuple)

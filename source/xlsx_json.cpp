@@ -55,17 +55,18 @@ namespace xlsx_reader{
         case basic_node_type_descriptor::ref_id:
             {
                 auto temp_detail = std::get<extend_node_type_descriptor::ref_detail_t>(cur_type._type_detail);
-                if(!temp_detail.second.empty())
+                string_view cur_workbook, cur_worksheet, cur_ref_type;
+                if(!cur_workbook.empty())
                 {
                     json result_json;
-                    result_json["ref"] = {string(temp_detail.first), string(temp_detail.second)};
+                    result_json["ref"] = {string(cur_worksheet), string(cur_ref_type)};
                     j = result_json;
                     return;
                 }
                 else
                 {
                     json result_json;
-                    result_json["ref"] = {string(temp_detail.first)};
+                    result_json["ref"] = {string(cur_workbook),string(cur_worksheet), string(cur_ref_type)};
                     j = result_json;
                     return;
                 }
