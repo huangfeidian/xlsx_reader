@@ -130,7 +130,7 @@ namespace xlsx_reader{
             json row_j = json::object();
             for(const auto& column_info: row_info.second)
             {
-                row_j[to_string(column_info.first)] = json(*column_info.second->cur_typed_value);
+                row_j[std::string((cur_worksheet.typed_headers[column_info.first - 1]).header_name)] = json(*column_info.second->cur_typed_value);
             }
             row_matrix[to_string(cur_row_index)] = row_j;
         }
