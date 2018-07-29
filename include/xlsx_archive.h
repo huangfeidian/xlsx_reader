@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <string>
 #include <memory>
+#include <vector>
 namespace xlsx_reader
 {
 	class archive
@@ -17,6 +18,8 @@ namespace xlsx_reader
 		archive& operator=(const archive& rhs) = delete;
 		archive(const archive& rhs) = delete;
 		const tinyxml2::XMLDocument* get_xml_document(const std::string& doc_path);
+		std::vector<sheet_desc> get_all_sheet_relation();
+		std::vector<std::string_view> get_shared_string(); 
 		~archive();
 	};
 }

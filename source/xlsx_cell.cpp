@@ -1,4 +1,4 @@
-#include <xlsx_cell.h>
+﻿#include <xlsx_cell.h>
 #include <xlsx_types.h>
 #include <iostream>
 namespace xlsx_reader
@@ -231,5 +231,10 @@ namespace xlsx_reader
 	{
 		_type = cell_type::error;
 		int_u32_v = static_cast<uint32_t>(error_from_string(string(_value)));
+	}
+	void to_json(json& j, const cell& cur_cell)
+	{
+		j = string(cur_cell._text);
+		return;
 	}
 }

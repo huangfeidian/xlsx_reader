@@ -193,6 +193,7 @@ namespace xlsx_reader{
 				}
 				auto result = new extend_node_type_descriptor(basic_node_type_descriptor::ref_id);
 				result->_type_detail = make_tuple(cur_workbook, cur_worksheet, cur_type_desc);
+				return result;
 			}
 			else if(tokens[0] == string_view("list") || tokens[0] == string_view("tuple"))
 			{
@@ -482,8 +483,9 @@ namespace xlsx_reader{
 					return nullptr;
 				}
 			case basic_node_type_descriptor::ref_id:
+			{
 				auto cur_ref_detail = std::get<extend_node_type_descriptor::ref_detail_t>(node_type->_type_detail);
-				if(std::get<2>(cur_ref_detail) == "str"sv)
+				if (std::get<2>(cur_ref_detail) == "str"sv)
 				{
 					return new extend_node_value(node_type, text);
 				}
@@ -491,6 +493,7 @@ namespace xlsx_reader{
 				{
 					return new extend_node_value(static_cast<uint64_t>(current_double_value.value()));
 				}
+			}
 			case basic_node_type_descriptor::tuple:
 			{
 				auto cur_tuple_detail = std::get<extend_node_type_descriptor::tuple_detail_t>(node_type->_type_detail);
@@ -659,6 +662,82 @@ namespace xlsx_reader{
 			return output_stream;
 		}
 	}
+	void to_json(json& j, const extend_node_type_descriptor& cur_type)
+	{
+		static unordered_map<basic_node_type_descriptor, string_view> type_to_string = {
+			{basic_node_type_descriptor::comment, "comment"},
+			{basic_node_type_descriptor::date, "date"},
+			{basic_node_type_descriptor::time, "time"},
+			{basic_node_type_descriptor::datetime, "datetime"},
+			{basic_node_type_descriptor::string, "string"},
+			{basic_node_type_descriptor::number_bool, "bool"},
+			{basic_node_type_descriptor::number_u32, "uint32"},
+			{basic_node_type_descriptor::number_32, "int32"},
+			{basic_node_type_descriptor::number_64, "int64"},
+			{basic_node_type_descriptor::number_u64, "uint64"},
+			{basic_node_type_descriptor::number_float, "float"},
+			{basic_node_type_descriptor::number_double, "double"},
+        };
+        auto temp_iter = type_to_string.find(cur_type._type);
+        if(temp_iter != type_to_string.end())
+        {
+            j = json(temp_iter->second);
+            return;
+        }
+        
+        switch(cur_type._type)
+        {
+        case basic_node_type_descriptor::list:
+            {
+                auto temp_detail = std::get<extend_node_type_descriptor::list_detail_t>(cur_type._type_detail);
+                json result_json;
+				string sep_string = ",";
+				sep_string[0] = std::get<2>(temp_detail);
+                result_json["list"] = {{"type", *std::get<0>(temp_detail)}, {"seperator", sep_string}, {"size", std::get<1>(temp_detail)}};
+                j = result_json;
+                return; 
+            }
+        case basic_node_type_descriptor::tuple:
+            {
+                auto temp_detail = std::get<extend_node_type_descriptor::tuple_detail_t>(cur_type._type_detail);
+                json result_json;
+				json type_detail = json::array();
+				for (const auto& i : temp_detail.first)
+				{
+					type_detail.push_back(*i);
+				}
+				string sep_string = ",";
+				sep_string[0] = temp_detail.second;
+				result_json["tuple"] = { {"type", type_detail}, {"seperator", sep_string} };
+                j = result_json;
+                return; 
+            }
+        case basic_node_type_descriptor::ref_id:
+            {
+                auto temp_detail = std::get<extend_node_type_descriptor::ref_detail_t>(cur_type._type_detail);
+                string_view cur_workbook, cur_worksheet, cur_ref_type;
+                if(!cur_workbook.empty())
+                {
+                    json result_json;
+                    result_json["ref"] = {cur_worksheet, cur_ref_type};
+                    j = result_json;
+                    return;
+                }
+                else
+                {
+                    json result_json;
+                    result_json["ref"] = {cur_workbook, cur_worksheet, cur_ref_type};
+                    j = result_json;
+                    return;
+                }
+            }
+        default:
+            j = nullptr;
+            return;
+        }
+        return;
+
+	}
 	
 	extend_node_type_descriptor* extend_node_value_constructor::parse_type(string_view type_string)
 	{
@@ -732,7 +811,73 @@ namespace xlsx_reader{
 
 		}
 	}
+	
+	void to_json(json& j, const extend_node_value& cur_value)
+	{
+		if (!cur_value.type_desc)
+		{
+			j = nullptr;
+			return;
+		}
+		switch(cur_value.type_desc->_type)
+        {
+        case basic_node_type_descriptor::comment:
+            j = cur_value.v_text;
+            return;
+        case basic_node_type_descriptor::date:
+            j = date::from_number(cur_value.v_int32, calendar::windows_1900).to_string();
+            return;
+        case basic_node_type_descriptor::time:
+            j = time::from_number(cur_value.v_double).to_string();
+            return;
+        case basic_node_type_descriptor::number_bool:
+            j = cur_value.v_bool;
+            return;
+        case basic_node_type_descriptor::number_32:
+            j = cur_value.v_int32;
+            return;
+        case basic_node_type_descriptor::number_u32:
+            j = cur_value.v_uint32;
+            return;
+        case basic_node_type_descriptor::number_64:
+            j = cur_value.v_int64;
+            return;
 
+        case basic_node_type_descriptor::number_u64:
+            j = cur_value.v_uint64;
+            return;
+
+        case basic_node_type_descriptor::number_float:
+            j = cur_value.v_float;
+            return;
+        case basic_node_type_descriptor::number_double:
+            j = cur_value.v_double;
+            return;
+        case basic_node_type_descriptor::ref_id:
+            j = cur_value.v_text;
+            return;
+        case basic_node_type_descriptor::string:
+            j = cur_value.v_text;
+            return;
+        case basic_node_type_descriptor::list:
+            j = json::array();
+            for(const auto& i: cur_value.v_list)
+            {
+                j.push_back(json(*i));
+            }
+            return;
+        case basic_node_type_descriptor::tuple:
+            j = json::array();
+            for(const auto& i: cur_value.v_list)
+            {
+                j.push_back(json(*i));
+            }
+            return;
+        default:
+            j = nullptr;
+            return;
+        }
+	}
 	const extend_node_type_descriptor* extend_node_type_descriptor::get_basic_type_desc(basic_node_type_descriptor in_type)
 	{
 		static vector<extend_node_type_descriptor> result = {
@@ -820,7 +965,7 @@ namespace xlsx_reader{
 
 	}
 
-    typed_cell* parse_node(const extend_node_type_descriptor* type_desc, const cell* in_cell_value)
+    typed_cell* extend_node_value_constructor::parse_node(const extend_node_type_descriptor* type_desc, const cell* in_cell_value)
     {
         if(!in_cell_value)
         {
@@ -844,25 +989,25 @@ namespace xlsx_reader{
             }
             return new typed_cell(in_cell_value->_row, in_cell_value->_column,new extend_node_value(in_cell_value->get_value<double>()));
         case basic_node_type_descriptor::number_32:
-            if(in_cell_value->_type != cell_type::number_32)
+            if(in_cell_value->_type != cell_type::number_double)
             {
                 return nullptr;
             }
             return new typed_cell(in_cell_value->_row, in_cell_value->_column, new extend_node_value(in_cell_value->get_value<int>()));
         case basic_node_type_descriptor::number_u32:
-            if(in_cell_value->_type != cell_type::number_u32)
+            if(in_cell_value->_type != cell_type::number_double)
             {
                 return nullptr;
             }
             return new typed_cell(in_cell_value->_row, in_cell_value->_column,new extend_node_value(in_cell_value->get_value<uint32_t>()));
         case basic_node_type_descriptor::number_64:
-            if(in_cell_value->_type != cell_type::number_64)
+            if(in_cell_value->_type != cell_type::number_double)
             {
                 return nullptr;
             }
             return new typed_cell(in_cell_value->_row, in_cell_value->_column,new extend_node_value(in_cell_value->get_value<int64_t>()));
         case basic_node_type_descriptor::number_u64:
-            if(in_cell_value->_type != cell_type::number_u64)
+            if(in_cell_value->_type != cell_type::number_double)
             {
                 return nullptr;
             }
@@ -874,7 +1019,7 @@ namespace xlsx_reader{
             }
             return new typed_cell(in_cell_value->_row, in_cell_value->_column,new extend_node_value(in_cell_value->get_value<bool>()));
         case basic_node_type_descriptor::number_float:
-            if(in_cell_value->_type != cell_type::number_float)
+            if(in_cell_value->_type != cell_type::number_double)
             {
                 return nullptr;
             }

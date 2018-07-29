@@ -1,96 +1,22 @@
-#include <xlsx_worksheet.h>
+﻿#include <xlsx_worksheet.h>
 #include <xlsx_workbook.h>
 #include <xlsx_utils.h>
 #include <cmath>
 #include <algorithm>
 #include <xlsx_cell.h>
-namespace {
-using namespace std;
-using namespace xlsx_reader;
-using namespace tinyxml2;
+#include <iostream>
 
-vector<cell> load_cells_from_xml(const XMLDocument* input_doc, const vector<string_view>& shared_string_table)
-{
-	auto& sheet_doc = *input_doc;
-	vector<cell> result;
-	auto worksheet_node = sheet_doc.FirstChildElement("worksheet");
-	auto sheet_data_node = worksheet_node->FirstChildElement("sheetData");
-	auto row_node = sheet_data_node->FirstChildElement("row");
-	while(row_node)
-	{
-		uint32_t row_index = stoi(row_node->Attribute("r"));
-		auto cell_node = row_node->FirstChildElement("c");
-		while(cell_node)
-		{
-			uint32_t col_idx = row_column_tuple_from_string(cell_node->Attribute("r")).second;
-			auto cur_cell = cell(row_index, col_idx);
-			auto current_value = cell_node->FirstChildElement("v")->GetText();
-			auto type_attr = cell_node->Attribute("t");
-			if(type_attr)
-			{
-				auto type_attr_v = string(type_attr);
-				if(type_attr_v == "s")
-				{
-					// shared str
-					cur_cell.set_value(shared_string_table[stoi(current_value)]);
-				}
-				else if(type_attr_v == "str")
-				{
-					// simple_str
-					cur_cell.set_value(current_value);
-				}
-				else if(type_attr_v == "b")
-				{
-					// BOOL
-					auto bool_value = stoi(current_value) == 1;
-					cur_cell.set_value(bool_value);
-				}
-				else if(type_attr_v == "n")
-				{
-					//numeric
-					auto double_value = stod(current_value);
-					cur_cell.set_value(double_value);
-				}
-				else if(type_attr_v == "inlineStr")
-				{
-					// simple_str
-					cur_cell.set_value(current_value);
-				}
-				else if(type_attr_v == "e")
-				{
-					// error
-					cur_cell.from_error(current_value);
-				}
-				else
-				{
-					// simple_str
-					cur_cell.set_value(current_value);
-				}
-			}
-			else
-			{
-				//numeric
-				auto double_value = stod(current_value);
-				cur_cell.set_value(double_value);
-			}
-
-			cell_node = cell_node->NextSiblingElement("c");
-			result.push_back(cur_cell);
-
-		}
-		row_node = row_node->NextSiblingElement("row");
-	}
-	return result;
-}
-}
 namespace xlsx_reader {
 	using namespace std;
 
-	worksheet::worksheet(const workbook* in_workbook, uint32_t in_sheet_id, string_view in_sheet_name)
-	: _workbook(in_workbook), _sheetId(in_sheet_id), _name(in_sheet_name)
+	worksheet::worksheet(const vector<cell>& in_all_cells, uint32_t in_sheet_id, string_view in_sheet_name)
+	: _cells(in_all_cells), _sheet_id(in_sheet_id), _name(in_sheet_name)
 	{
-		auto the_raw_content = _workbook->get_sheet_xml(in_sheet_id);
-		_cells = load_cells_from_xml(the_raw_content, _workbook->shared_string);
+		load_from_cells();
+	}
+
+	void worksheet::load_from_cells()
+	{
 		row_info.clear();
 		max_rows = 0;
 		max_columns = 0;
@@ -100,9 +26,10 @@ namespace xlsx_reader {
 			max_rows = max(current_row_id, max_rows);
 			uint32_t current_column_id = one_cell.get_column();
 			max_columns = max(max_columns, current_column_id);
-			auto cur_row_info = row_info[current_row_id];
+			auto& cur_row_info = row_info[current_row_id];
 			cur_row_info[current_column_id] = &one_cell;
 		}
+		after_load_process();
 	}
 	const map<uint32_t, const cell*>& worksheet::get_row(uint32_t row_idx) const
 	{
@@ -139,7 +66,7 @@ namespace xlsx_reader {
 	}
 	ostream& operator<<(ostream& output_stream, const worksheet& in_worksheet)
 	{
-		output_stream<<"worksheet name: "<< in_worksheet.get_name()<<", sheet_id: "<<in_worksheet._sheetId<<endl;
+		output_stream<<"worksheet name: "<< in_worksheet.get_name()<<", sheet_id: "<<in_worksheet._sheet_id<<endl;
 		for(const auto& one_row: in_worksheet.row_info)
 		{
 			output_stream<<"row "<<one_row.first<<" has cells "<< one_row.second.size()<<endl;
@@ -149,5 +76,33 @@ namespace xlsx_reader {
 			}
 		}
 		return output_stream;
+	}
+	void worksheet::after_load_process()
+	{
+		cout<<"load complete for sheet "<< _name<<" with "<< max_rows<<" rows "<<max_columns<<" columns"<<endl;
+	}
+	worksheet::~worksheet()
+	{
+
+	}
+	void to_json(json& j, const worksheet& cur_worksheet)
+	{
+		json new_j;
+        json row_matrix;
+		new_j["sheet_id"] = cur_worksheet._sheet_id;
+		new_j["sheet_name"] = cur_worksheet._name;
+        for(const auto& row_info: cur_worksheet.row_info)
+        {
+            auto cur_row_index = row_info.first;
+            json row_j = json::object();
+            for(const auto& column_info: row_info.second)
+            {
+                row_j[column_info.first] = json(*column_info.second);
+            }
+            row_matrix[cur_row_index] = row_j;
+        }
+        new_j["matrix"] = row_matrix;
+        j = new_j;
+        return;
 	}
 };

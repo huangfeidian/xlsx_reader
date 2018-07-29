@@ -1,5 +1,6 @@
-#include <xlsx_json.h>
+﻿
 #include <iostream>
+#include <xlsx_cell_extend.h>
 using namespace std;
 using namespace xlsx_reader;
 bool json_test_type_parse()
@@ -17,8 +18,8 @@ bool json_test_type_parse()
         "int64",
         "float",
         "double",
-        "ref(colors)",
-        "ref(rgb, colors)",
+        "ref(colors, str)",
+        "ref(rgb, colors, str)",
         "list(int, 2)",
         "list(str, 2, #)",
         "list(str, 0, #)"
@@ -31,8 +32,8 @@ bool json_test_type_parse()
         "tuple(tuple(int, int), tuple(str, str))",
         "tuple(tuple(int, int), tuple(str, str), #)",
         "tuple(list(int, 3), list(str, 3))",
-        "tuple(ref(color), ref(color), ref(color))",
-        "list(tuple(ref(color), ref(color, all_rgb), #), 3, ?)",
+        "tuple(ref(color, str), ref(color, str), ref(color, str))",
+        "list(tuple(ref(color, str), ref(color, all_rgb, str), #), 3, ?)",
     };
 	bool failed = false;
     for(const auto& i : valid_inputs)
@@ -62,11 +63,12 @@ bool json_test_type_value_parse()
 		{"int64", {"0", "-1", "1", "20000000000000", "-20000000000000"}},
 		{"float", {"0.0", "-0.0", "1.0", "-1.0", "3.14159", "-3141519"}},
 		{"double", {"0.0", "-0.0", "3.141592657385", "-3.141592657384"}},
-		{"ref(colors)", {"rgb1", "rgb2", "rgb3"}},
-		{ "ref(colors, color_sheet)",{ "rgb1", "rgb2", "rgb3" } },
+		{"ref(colors, str)", {"rgb1", "rgb2", "rgb3"}},
+		{ "ref(colors, int)",{ "1", "2", "3" } },
+		{ "ref(colors, color_sheet, str)",{ "rgb1", "rgb2", "rgb3" } },
 		{"tuple(int, str)", {"(3, 5)", "(4, hehe)", "(5, -1)", "(0, fail)"}},
 		{"tuple(str, str, #)", {"(wala , #hehe)", "(wawa,#hehe)", "( wawa, # hehe)", "(	wawa	, #    hehe )"} },
-		{"list(ref(color), 3)", {"(rgb1,rgb2, rgb3)", "(	rgb1 , rgb 2, rgb 3)"} },
+		{"list(ref(color, str), 3)", {"(rgb1,rgb2, rgb3)", "(	rgb1 , rgb 2, rgb 3)"} },
 		{"list(int, 3)", {"(1,2,3)"}},
 		{"list(list(int, 3), 3)", {"((1,2,3),(2,3,4),(3,4,5))"}},
 		{"list(list(int, 0), 3)", {"((1),(1,2),(1,2,3))"}},
@@ -74,8 +76,8 @@ bool json_test_type_value_parse()
 		{"tuple(tuple(int,int), tuple(str,str))", {"((1,2),(h, k))"}},
 		{"tuple(tuple(int,int), tuple(str, str), #)", {"((1,2)#(h,k))"}},
 		{"tuple(list(int, 3), list(int, 3))", {"((1,2,3),(2,3,4))"}},
-		{"tuple(ref(color), ref(color), ref(color))", {"(rgb1, rgb2, rgb3)"}},
-		{"list(tuple(ref(color), ref(color, all_rgb), #),3,?)", {"((rgb1#rgb2)?(rgb1#rgb2)?(rgb1#rgb2))"}}
+		{"tuple(ref(color, str), ref(color, str), ref(color, str))", {"(rgb1, rgb2, rgb3)"}},
+		{"list(tuple(ref(color, str), ref(color, all_rgb, str), #),3,?)", {"((rgb1#rgb2)?(rgb1#rgb2)?(rgb1#rgb2))"}}
 	};
 	bool failed = false;
 	for (const auto& i : typed_values)

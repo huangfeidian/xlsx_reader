@@ -3,7 +3,9 @@
 #include <xlsx_types.h>
 #include <cstdint>
 #include <ostream>
+#include <nlohmann/json.hpp>
 namespace xlsx_reader {
+	using json = nlohmann::json;
 	struct cell_value
 	{
 		cell_value(std::uint32_t row, std::uint32_t column);
@@ -54,6 +56,7 @@ namespace xlsx_reader {
 		cell &operator=(const cell &rhs);
 		bool operator==(const cell &comparand) const;
 		friend std::ostream& operator<<(std::ostream& output_steam, const cell& in_cell);
+		friend void to_json(json& j, const cell& cur_cell);
 
 	};
 	template<>

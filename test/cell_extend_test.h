@@ -17,8 +17,8 @@ bool test_type_parse()
         "int64",
         "float",
         "double",
-        "ref(colors)",
-        "ref(rgb, colors)",
+        "ref(colors, str)",
+        "ref(rgb, colors, str)",
         "list(int, 2)",
         "list(str, 2, #)",
         "list(str, 0, #)"
@@ -31,8 +31,8 @@ bool test_type_parse()
         "tuple(tuple(int, int), tuple(str, str))",
         "tuple(tuple(int, int), tuple(str, str), #)",
         "tuple(list(int, 3), list(str, 3))",
-        "tuple(ref(color), ref(color), ref(color))",
-        "list(tuple(ref(color), ref(color, all_rgb), #), 3, ?)",
+        "tuple(ref(color, str), ref(color, str), ref(color, str))",
+        "list(tuple(ref(color, str), ref(color, all_rgb, str), #), 3, ?)",
     };
 	bool failed = false;
     for(const auto& i : valid_inputs)

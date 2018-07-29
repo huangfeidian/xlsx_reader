@@ -85,6 +85,41 @@ namespace xlsx_reader
 			}
 		}
 	}
+	vector<sheet_desc> archive::get_all_sheet_relation()
+	{
+		auto workbook_relation_path = "xl/workbook.xml";
+		auto cur_doc = get_xml_document(workbook_relation_path);
+		vector<sheet_desc> all_sheets;
+		auto workbook_node = cur_doc->FirstChildElement("workbook");
+		auto sheets_node = workbook_node->FirstChildElement("sheets");
+		auto sheets_begin = sheets_node->FirstChildElement("sheet");
+		while (sheets_begin)
+		{
+			string current_sheet_name(sheets_begin->Attribute("name"));
+			string current_sheet_id(sheets_begin->Attribute("sheetId"));
+			string current_relation_id(sheets_begin->Attribute("r:id"));
+			all_sheets.emplace_back(make_tuple(current_sheet_name, stoi(current_sheet_id), current_relation_id));
+			sheets_begin = sheets_begin->NextSiblingElement("sheet");
+		}
+		return all_sheets;
+	}
+
+	vector<string_view> archive::get_shared_string()
+	{
+		auto shared_string_table_path = "xl/sharedStrings.xml";
+		auto cur_shared_doc = get_xml_document(shared_string_table_path);
+		vector<string_view> all_share_strings;
+		auto share_total_node = cur_shared_doc->FirstChildElement("sst");
+		auto share_string_begin = share_total_node->FirstChildElement("si");
+		while (share_string_begin)
+		{
+			auto current_value = share_string_begin->FirstChildElement("t")->GetText();
+			// cout << "value " << current_value << " has type " << current_type << endl;
+			all_share_strings.emplace_back(current_value);
+			share_string_begin = share_string_begin->NextSiblingElement("si");
+		}
+		return all_share_strings;
+	}
 	archive::~archive()
 	{
 		for(auto i: archive_file_buffers)
