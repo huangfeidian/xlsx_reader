@@ -142,4 +142,8 @@ namespace xlsx_reader{
 	{
 
 	}
+    const vector<typed_header>& typed_worksheet::get_typed_headers()
+    {
+        return typed_headers;
+    }
 }

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <xlsx_utils.h>
 #include <numeric>
+#include <functional>
 namespace {
 	using namespace std;
 	string_view strip_parenthesis(string_view input_string)
@@ -738,7 +739,92 @@ namespace xlsx_reader{
         return;
 
 	}
-	
+	bool operator==(const extend_node_type_descriptor& cur, const extend_node_type_descriptor& other)
+	{
+		if(cur._type != other._type)
+		{
+			return false;
+		}
+		switch(cur._type)
+		{
+			case basic_node_type_descriptor::comment:
+			case basic_node_type_descriptor::date:
+			case basic_node_type_descriptor::datetime:
+			case basic_node_type_descriptor::string:
+			case basic_node_type_descriptor::number_bool:
+			case basic_node_type_descriptor::number_32:
+			case basic_node_type_descriptor::number_64:
+			case basic_node_type_descriptor::number_double:
+			case basic_node_type_descriptor::number_float:
+			case basic_node_type_descriptor::number_u32:
+			case basic_node_type_descriptor::number_u64:
+				return true;
+			case basic_node_type_descriptor::list:
+			{
+				if(cur._type_detail.index() != other._type_detail.index())
+				{
+					return false;
+				}
+				auto cur_detail = std::get<extend_node_type_descriptor::list_detail_t>(cur._type_detail);
+				auto other_detail = std::get<extend_node_type_descriptor::list_detail_t>(other._type_detail);
+				if(std::get<1>(cur_detail) != std::get<1>(other_detail))
+				{
+					return false;
+				}
+				if(*std::get<0>(cur_detail) == *std::get<0>(other_detail))
+				{
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
+				
+			case basic_node_type_descriptor::ref_id:
+			{
+				if(cur._type_detail.index() != other._type_detail.index())
+				{
+					return false;
+				}
+				auto cur_detail = std::get<extend_node_type_descriptor::ref_detail_t>(cur._type_detail);
+				auto other_detail = std::get<extend_node_type_descriptor::ref_detail_t>(other._type_detail);
+				return cur_detail == other_detail;
+			}
+				
+			case basic_node_type_descriptor::tuple:
+			{
+				if(cur._type_detail.index() != other._type_detail.index())
+				{
+					return false;
+				}
+				auto cur_detail = std::get<extend_node_type_descriptor::tuple_detail_t>(cur._type_detail);
+				auto other_detail = std::get<extend_node_type_descriptor::tuple_detail_t>(other._type_detail);
+				if(cur_detail.first.size() != other_detail.first.size())
+				{
+					return false;
+				}
+				for(int i = 0; i < cur_detail.first.size(); i++)
+				{
+					if(*cur_detail.first[i] == *other_detail.first[i])
+					{
+						continue;
+					}
+					else
+					{
+						return false;
+					}
+				}
+				return true;
+			}
+			default:
+				return false;
+		}
+	}
+	bool operator!=(const extend_node_type_descriptor& cur, const extend_node_type_descriptor& other)
+	{
+		return !(cur == other);
+	}
 	extend_node_type_descriptor* extend_node_value_constructor::parse_type(string_view type_string)
 	{
 		auto all_tokens = parse_token_from_type_str(type_string);
@@ -965,7 +1051,104 @@ namespace xlsx_reader{
 
 	}
 
-    typed_cell* extend_node_value_constructor::parse_node(const extend_node_type_descriptor* type_desc, const cell* in_cell_value)
+	bool operator==(const extend_node_value& cur, const extend_node_value& other)
+	{
+		if(!cur.type_desc || ! other.type_desc)
+		{
+			return false;
+		}
+		if(*cur.type_desc!=(*other.type_desc))
+		{
+			return false;
+		}
+		switch(cur.type_desc->_type)
+		{
+		case basic_node_type_descriptor::comment:
+        case basic_node_type_descriptor::string:
+            return cur.v_text == other.v_text;
+        case basic_node_type_descriptor::date:
+        case basic_node_type_descriptor::datetime:
+        case basic_node_type_descriptor::number_double:
+			return cur.v_double == other.v_double;
+        case basic_node_type_descriptor::number_32:
+			return cur.v_int32 == other.v_int32;
+        case basic_node_type_descriptor::number_u32:
+            return cur.v_uint32 == other.v_uint32;
+        case basic_node_type_descriptor::number_64:
+            return cur.v_int64 == other.v_int64;
+        case basic_node_type_descriptor::number_u64:
+            return cur.v_uint64 == other.v_uint64;
+        case basic_node_type_descriptor::number_bool:
+            return cur.v_bool == other.v_bool;
+        case basic_node_type_descriptor::number_float:
+			return cur.v_float == other.v_float;
+        case basic_node_type_descriptor::list:
+        case basic_node_type_descriptor::tuple:
+        case basic_node_type_descriptor::ref_id:
+			if(cur.v_list.size() != other.v_list.size())
+			{
+				return false;
+			}
+			auto cur_size = cur.v_list.size();
+			for(int i=0; i< cur_size; i++)
+			{
+				if(*cur.v_list[i] == *other.v_list[i])
+				{
+					continue;
+				}
+				else
+				{
+					return false;
+				}
+			}
+			return true;
+        default:
+            return false;
+        }
+	}
+	bool operator!=(const extend_node_value& cur, const extend_node_value& other)
+	{
+		return !(cur == other);
+	}
+
+	size_t extend_node_value_hash::operator()(const extend_node_value & s)
+	{
+		switch(s.type_desc->_type)
+		{
+		case basic_node_type_descriptor::comment:
+        case basic_node_type_descriptor::string:
+            return std::hash<std::string_view>()(s.v_text);
+        case basic_node_type_descriptor::date:
+        case basic_node_type_descriptor::datetime:
+        case basic_node_type_descriptor::number_double:
+			return std::hash<double>()(s.v_double);
+        case basic_node_type_descriptor::number_32:
+			return std::hash<std::int32_t>()(s.v_int32);
+        case basic_node_type_descriptor::number_u32:
+            return std::hash<std::uint32_t>()(s.v_uint32);
+        case basic_node_type_descriptor::number_64:
+            return std::hash<std::int64_t>()(s.v_int64);
+        case basic_node_type_descriptor::number_u64:
+            return std::hash<std::uint64_t>()(s.v_uint64);
+        case basic_node_type_descriptor::number_bool:
+            return std::hash<bool>()(s.v_bool);
+        case basic_node_type_descriptor::number_float:
+			return std::hash<float>()(s.v_float);
+        case basic_node_type_descriptor::list:
+        case basic_node_type_descriptor::tuple:
+        case basic_node_type_descriptor::ref_id:
+			auto cur_size = s.v_list.size();
+			std::size_t result_hash = 0;
+			for(const auto & i: s.v_list)
+			{
+				result_hash += operator()(*i) / cur_size;
+			}
+			return result_hash;
+        default:
+            return 0;
+        }
+	}
+   typed_cell* extend_node_value_constructor::parse_node(const extend_node_type_descriptor* type_desc, const cell* in_cell_value)
     {
         if(!in_cell_value)
         {

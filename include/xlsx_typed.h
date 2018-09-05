@@ -28,14 +28,18 @@ namespace xlsx_reader{
         friend void to_json(json& j, const typed_worksheet& cur_worksheet);
 		template <typename T> friend class workbook;
         virtual ~typed_worksheet();
+        const std::vector<typed_header>& get_typed_headers();
+        std::uint32_t get_index_for_numeric(const extend_node_value& key);
     protected:
         std::vector<typed_header> typed_headers;
         std::map<std::uint32_t, std::map<std::uint32_t, const typed_cell*>> typed_row_info;
         std::vector<typed_cell> typed_cells;
+        std::unordered_map<const extend_node_value&, std::uint32_t, extend_node_value_hash> _indexes;
         void after_load_process();
     private:
         void convert_cell_to_typed_value();
         bool convert_typed_header();
         virtual int value_begin_row() const; // 获取数据开始的行号
     };
+    
 }

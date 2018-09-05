@@ -51,6 +51,8 @@ namespace xlsx_reader
 		friend std::ostream& operator<<(std::ostream& output_stream, const extend_node_type_descriptor& cur_node);
 		static const extend_node_type_descriptor* get_basic_type_desc(basic_node_type_descriptor in_type);
 		friend void to_json(json& j, const extend_node_type_descriptor& cur_extend_node_type_descriptor);
+		friend bool operator==(const extend_node_type_descriptor& cur, const extend_node_type_descriptor& other);
+		friend bool operator!=(const extend_node_type_descriptor& cur, const extend_node_type_descriptor& other);
 	};
 
 	struct extend_node_value
@@ -81,6 +83,13 @@ namespace xlsx_reader
 		extend_node_value(const extend_node_type_descriptor* in_type_desc, std::string_view in_value);
 		friend std::ostream& operator<<(std::ostream& output_stream, const extend_node_value& cur_node);
 		friend void to_json(json& j, const extend_node_value& cur_extend_node_value);
+		friend bool operator==(const extend_node_value& cur, const extend_node_value& other);
+		friend bool operator!=(const extend_node_value& cur, const extend_node_value& other);
+
+	};
+	struct extend_node_value_hash
+	{
+		std::size_t operator()(const extend_node_value& s);
 	};
 	class typed_cell
     {
