@@ -63,6 +63,25 @@ namespace xlsx_reader{
                 cerr<<"invalid type desc "<<cur_cell_value->get_value<string_view>()<<"for header type at column "<<i.first<<endl;
                 return false;
             }
+			if (column_idx == 1)
+			{
+				// expect int or str in first column
+				switch (cur_type_desc->_type)
+				{
+				case basic_node_type_descriptor::number_bool:
+				case basic_node_type_descriptor::number_float:
+				case basic_node_type_descriptor::number_double:
+				case basic_node_type_descriptor::date:
+				case basic_node_type_descriptor::datetime:
+				case basic_node_type_descriptor::comment:
+				case basic_node_type_descriptor::list:
+				case basic_node_type_descriptor::tuple:
+					cerr << "first column value type should be int or string" << endl;
+					return false;
+				default:
+					break;
+				}
+			}
             string_view header_comment;
             cur_cell_value = get_cell(3, column_idx);
             if(cur_cell_value)
@@ -104,6 +123,8 @@ namespace xlsx_reader{
                 typed_cells.push_back(*cur_typed_cell);
             }
             typed_row_info[i.first] = cur_row_typed_info;
+            _indexes[*(cur_row_typed_info.cbegin()->second->cur_typed_value)] = i.first;
+
         }
     }
     typed_worksheet::typed_worksheet(const vector<cell>& all_cells, uint32_t in_sheet_id, string_view in_sheet_name)
