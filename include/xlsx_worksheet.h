@@ -15,10 +15,12 @@ namespace xlsx_reader
 
 		const std::string_view _name;
 		const std::uint32_t _sheet_id;
+		const void* _workbook;
 		std::string_view get_name() const;
 		std::uint32_t get_max_row() const;
 		std::uint32_t get_max_column() const;
-		worksheet(const std::vector<cell>& all_cells, std::uint32_t in_sheet_id, std::string_view in_sheet_name);
+		worksheet(const std::vector<cell>& all_cells, std::uint32_t in_sheet_id, std::string_view in_sheet_name, const workbook<worksheet>* in_workbook);
+		const workbook<worksheet>* get_workbook() const;
 		const std::map<std::uint32_t, const cell*>& get_row(std::uint32_t) const;
 		const cell* get_cell(std::uint32_t row_idx, std::uint32_t column_idx) const;
 		friend std::ostream& operator<<(std::ostream& output_steam, const worksheet& in_worksheet);

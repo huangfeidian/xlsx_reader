@@ -127,11 +127,15 @@ namespace xlsx_reader{
 
         }
     }
-    typed_worksheet::typed_worksheet(const vector<cell>& all_cells, uint32_t in_sheet_id, string_view in_sheet_name)
-    : worksheet(all_cells, in_sheet_id, in_sheet_name)
+    typed_worksheet::typed_worksheet(const vector<cell>& all_cells, uint32_t in_sheet_id, string_view in_sheet_name, const workbook<typed_worksheet>* in_workbook)
+    : worksheet(all_cells, in_sheet_id, in_sheet_name, reinterpret_cast<const workbook<worksheet>*>(in_workbook))
     {
 
     }
+    const workbook<typed_worksheet>* typed_worksheet::get_workbook() const
+	{
+		return reinterpret_cast<const workbook<typed_worksheet>*>(_workbook);
+	}
     void typed_worksheet::after_load_process()
     {
         convert_typed_header();

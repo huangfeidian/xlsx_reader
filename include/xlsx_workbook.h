@@ -34,7 +34,7 @@ namespace xlsx_reader
 
 			for(int i = 0; i < sheet_relations.size(); i++)
 			{
-				auto cur_worksheet = new worksheet_t(get_cells_for_sheet(i + 1), get<1>(sheet_relations[i]), get<0>(sheet_relations[i]));
+				auto cur_worksheet = new worksheet_t(get_cells_for_sheet(i + 1), get<1>(sheet_relations[i]), get<0>(sheet_relations[i]), this);
 				cur_worksheet->after_load_process();
 				_worksheets.emplace_back(cur_worksheet);
 			}
