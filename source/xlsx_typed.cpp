@@ -171,4 +171,36 @@ namespace xlsx_reader{
     {
         return typed_headers;
     }
+    optional<uint32_t> typed_worksheet::get_indexed_row(const extend_node_value& first_row_value) const
+    {
+        auto iter = _indexes.find(first_row_value);
+        if(iter == _indexes.end())
+        {
+            return nullopt;
+        }
+        else
+        {
+            return iter->second;
+        }
+    }
+    optional<reference_wrapper<const map<uint32_t, const extend_node_value*>>> typed_worksheet::get_ref_row(string_view sheet_name, const extend_node_value& first_row_value) const
+    {
+        auto current_workbook = get_workbook();
+        if(! current_workbook)
+        {
+            return nullopt;
+        }
+        auto sheet_idx = current_workbook->get_sheet_index_by_name(sheet_name);
+        if(! sheet_idx)
+        {
+            return nullopt;
+        }
+        auto the_worksheet = current_workbook->get_worksheet(sheet_idx.value());
+        auto row_index = the_worksheet.get_indexed_row(first_row_value);
+        if(!row_index)
+        {
+            return nullopt;
+        }
+        return cref(the_worksheet.get_typed_row(row_index.value()));
+    }
 }

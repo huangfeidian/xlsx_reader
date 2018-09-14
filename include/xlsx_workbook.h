@@ -2,6 +2,7 @@
 #include <xlsx_worksheet.h>
 #include <memory>
 #include <xlsx_archive.h>
+#include <optional>
 namespace xlsx_reader
 {
 	template <typename worksheet_t> 
@@ -11,6 +12,21 @@ namespace xlsx_reader
 		std::vector<std::unique_ptr<worksheet_t>> _worksheets;
 		std::vector<sheet_desc> sheet_relations; 
 		std::vector<std::string_view> shared_string;
+	private:
+		std::unordered_map<std::string_view, std::uint32_t> sheets_name_map;
+	public:
+		std::optional<std::uint32_t> get_sheet_index_by_name(std::string_view sheet_name) const
+		{
+			auto iter = sheets_name_map.find(sheet_name);
+			if(iter == sheets_name_map.end())
+			{
+				return std::nullopt;
+			}
+			else
+			{
+				return iter->second;
+			}
+		}
 		const worksheet_t& get_worksheet(std::uint32_t sheet_idx) const
 		{
 			return *(_worksheets[sheet_idx]);
@@ -37,6 +53,8 @@ namespace xlsx_reader
 				auto cur_worksheet = new worksheet_t(get_cells_for_sheet(i + 1), get<1>(sheet_relations[i]), get<0>(sheet_relations[i]), this);
 				cur_worksheet->after_load_process();
 				_worksheets.emplace_back(cur_worksheet);
+				auto current_sheet_name = cur_worksheet->get_name();
+				sheets_name_map[current_sheet_name] = i;
 			}
 			after_load_process();
 		}
