@@ -562,6 +562,41 @@ namespace xlsx_reader{
 				return nullptr;
 		}
 	}
+	optional<extend_node_type_descriptor::list_detail_t> extend_node_type_descriptor::get_list_detail_t() const
+	{
+		if(_type != basic_node_type_descriptor::list)
+		{
+			return nullopt;
+		}
+		else
+		{
+			return std::get<extend_node_type_descriptor::list_detail_t>(_type_detail);
+		}
+	}
+
+	optional<extend_node_type_descriptor::ref_detail_t> extend_node_type_descriptor::get_ref_detail_t() const
+	{
+		if(_type != basic_node_type_descriptor::ref_id)
+		{
+			return nullopt;
+		}
+		else
+		{
+			return std::get<extend_node_type_descriptor::ref_detail_t>(_type_detail);
+		}
+	}
+
+	optional<extend_node_type_descriptor::tuple_detail_t> extend_node_type_descriptor::get_tuple_detail_t() const
+	{
+		if(_type != basic_node_type_descriptor::tuple)
+		{
+			return nullopt;
+		}
+		else
+		{
+			return std::get<extend_node_type_descriptor::tuple_detail_t>(_type_detail);
+		}
+	}
 
 	extend_node_type_descriptor::extend_node_type_descriptor()
 	{
@@ -1223,4 +1258,104 @@ namespace xlsx_reader{
 	{
 		return extend_node_value_constructor::parse_node(type_desc, in_cell_value);
 	} 
+	template <>
+	optional<std::uint32_t> extend_node_value::get_value<uint32_t>() const
+	{
+		if(type_desc->_type != basic_node_type_descriptor::number_u32)
+		{
+			return nullopt;
+		}
+		else
+		{
+			return v_uint32;
+		}
+	}
+
+	template <>
+	optional<std::int32_t> extend_node_value::get_value<int32_t>() const
+	{
+		if(type_desc->_type != basic_node_type_descriptor::number_32)
+		{
+			return nullopt;
+		}
+		else
+		{
+			return v_int32;
+		}
+	}
+
+	template <>
+	optional<std::int64_t> extend_node_value::get_value<int64_t>() const
+	{
+		if(type_desc->_type != basic_node_type_descriptor::number_64)
+		{
+			return nullopt;
+		}
+		else
+		{
+			return v_int64;
+		}
+	}
+	template <>
+	optional<std::uint64_t> extend_node_value::get_value<uint64_t>() const
+	{
+		if(type_desc->_type != basic_node_type_descriptor::number_u64)
+		{
+			return nullopt;
+		}
+		else
+		{
+			return v_uint64;
+		}
+	}
+	template <>
+	optional<bool> extend_node_value::get_value<bool>() const
+	{
+		if(type_desc->_type != basic_node_type_descriptor::number_bool)
+		{
+			return nullopt;
+		}
+		else
+		{
+			return v_bool;
+		}
+	}
+
+	template <>
+	optional<float> extend_node_value::get_value<float>() const
+	{
+		if(type_desc->_type != basic_node_type_descriptor::number_float)
+		{
+			return nullopt;
+		}
+		else
+		{
+			return v_bool;
+		}
+	}
+	template <>
+	optional<double> extend_node_value::get_value<double>() const
+	{
+		if(type_desc->_type != basic_node_type_descriptor::number_double)
+		{
+			return nullopt;
+		}
+		else
+		{
+			return v_double;
+		}
+	}
+	template <>
+	optional<string_view> extend_node_value::get_value<string_view>() const
+	{
+		if(type_desc->_type != basic_node_type_descriptor::string)
+		{
+			return nullopt;
+		}
+		else
+		{
+			return v_text;
+		}
+	}
+
 }

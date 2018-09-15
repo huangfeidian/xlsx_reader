@@ -183,7 +183,7 @@ namespace xlsx_reader{
             return iter->second;
         }
     }
-    optional<reference_wrapper<const map<uint32_t, const extend_node_value*>>> typed_worksheet::get_ref_row(string_view sheet_name, const extend_node_value& first_row_value) const
+    optional<reference_wrapper<const map<uint32_t, const typed_cell*>>> typed_worksheet::get_ref_row(string_view sheet_name, const extend_node_value& first_row_value) const
     {
         auto current_workbook = get_workbook();
         if(! current_workbook)
@@ -202,5 +202,9 @@ namespace xlsx_reader{
             return nullopt;
         }
         return cref(the_worksheet.get_typed_row(row_index.value()));
+    }
+    const map<uint32_t, const typed_cell*>& typed_worksheet::get_typed_row(uint32_t _idx) const
+    {
+        return typed_row_info.find(_idx)->second;
     }
 }
