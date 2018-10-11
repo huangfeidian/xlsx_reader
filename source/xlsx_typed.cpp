@@ -127,11 +127,15 @@ namespace xlsx_reader{
 
         }
     }
-    typed_worksheet::typed_worksheet(const vector<cell>& all_cells, uint32_t in_sheet_id, string_view in_sheet_name)
-    : worksheet(all_cells, in_sheet_id, in_sheet_name)
+    typed_worksheet::typed_worksheet(const vector<cell>& all_cells, uint32_t in_sheet_id, string_view in_sheet_name, const workbook<typed_worksheet>* in_workbook)
+    : worksheet(all_cells, in_sheet_id, in_sheet_name, reinterpret_cast<const workbook<worksheet>*>(in_workbook))
     {
 
     }
+    const workbook<typed_worksheet>* typed_worksheet::get_workbook() const
+	{
+		return reinterpret_cast<const workbook<typed_worksheet>*>(_workbook);
+	}
     void typed_worksheet::after_load_process()
     {
         convert_typed_header();
@@ -166,5 +170,41 @@ namespace xlsx_reader{
     const vector<typed_header>& typed_worksheet::get_typed_headers()
     {
         return typed_headers;
+    }
+    optional<uint32_t> typed_worksheet::get_indexed_row(const extend_node_value& first_row_value) const
+    {
+        auto iter = _indexes.find(first_row_value);
+        if(iter == _indexes.end())
+        {
+            return nullopt;
+        }
+        else
+        {
+            return iter->second;
+        }
+    }
+    optional<reference_wrapper<const map<uint32_t, const typed_cell*>>> typed_worksheet::get_ref_row(string_view sheet_name, const extend_node_value& first_row_value) const
+    {
+        auto current_workbook = get_workbook();
+        if(! current_workbook)
+        {
+            return nullopt;
+        }
+        auto sheet_idx = current_workbook->get_sheet_index_by_name(sheet_name);
+        if(! sheet_idx)
+        {
+            return nullopt;
+        }
+        auto the_worksheet = current_workbook->get_worksheet(sheet_idx.value());
+        auto row_index = the_worksheet.get_indexed_row(first_row_value);
+        if(!row_index)
+        {
+            return nullopt;
+        }
+        return cref(the_worksheet.get_typed_row(row_index.value()));
+    }
+    const map<uint32_t, const typed_cell*>& typed_worksheet::get_typed_row(uint32_t _idx) const
+    {
+        return typed_row_info.find(_idx)->second;
     }
 }

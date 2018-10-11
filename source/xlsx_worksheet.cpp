@@ -9,8 +9,8 @@
 namespace xlsx_reader {
 	using namespace std;
 
-	worksheet::worksheet(const vector<cell>& in_all_cells, uint32_t in_sheet_id, string_view in_sheet_name)
-	: _cells(in_all_cells), _sheet_id(in_sheet_id), _name(in_sheet_name)
+	worksheet::worksheet(const vector<cell>& in_all_cells, uint32_t in_sheet_id, string_view in_sheet_name, const workbook<worksheet>* in_workbook)
+	: _cells(in_all_cells), _sheet_id(in_sheet_id), _name(in_sheet_name), _workbook(reinterpret_cast<const void*>(in_workbook))
 	{
 		load_from_cells();
 	}
@@ -84,6 +84,10 @@ namespace xlsx_reader {
 	worksheet::~worksheet()
 	{
 
+	}
+	const workbook<worksheet>* worksheet::get_workbook() const
+	{
+		return reinterpret_cast<const workbook<worksheet>*>(_workbook);
 	}
 	void to_json(json& j, const worksheet& cur_worksheet)
 	{

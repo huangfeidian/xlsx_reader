@@ -53,6 +53,9 @@ namespace xlsx_reader
 		friend void to_json(json& j, const extend_node_type_descriptor& cur_extend_node_type_descriptor);
 		friend bool operator==(const extend_node_type_descriptor& cur, const extend_node_type_descriptor& other);
 		friend bool operator!=(const extend_node_type_descriptor& cur, const extend_node_type_descriptor& other);
+		std::optional<list_detail_t> get_list_detail_t() const;
+		std::optional<ref_detail_t> get_ref_detail_t() const;
+		std::optional<tuple_detail_t> get_tuple_detail_t() const;
 	};
 
 	struct extend_node_value
@@ -85,8 +88,27 @@ namespace xlsx_reader
 		friend void to_json(json& j, const extend_node_value& cur_extend_node_value);
 		friend bool operator==(const extend_node_value& cur, const extend_node_value& other);
 		friend bool operator!=(const extend_node_value& cur, const extend_node_value& other);
+		template <typename T>
+		std::optional<T> get_value() const;
 
 	};
+	template <>
+	std::optional<std::uint32_t> extend_node_value::get_value<std::uint32_t>() const;
+	template <>
+	std::optional<std::int32_t> extend_node_value::get_value<std::int32_t>() const;
+	template <>
+	std::optional<std::int64_t> extend_node_value::get_value<std::int64_t>() const;
+	template <>
+	std::optional<std::uint64_t> extend_node_value::get_value<std::uint64_t>() const;
+	template <>
+	std::optional<float> extend_node_value::get_value<float>() const;
+	template <>
+	std::optional<double> extend_node_value::get_value<double>() const;
+	template <>
+	std::optional<bool> extend_node_value::get_value<bool>() const;
+	template <>
+	std::optional<std::string_view> extend_node_value::get_value<std::string_view>() const;
+
 	struct extend_node_value_hash
 	{
 		std::size_t operator()(const extend_node_value& s);
