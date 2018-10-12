@@ -122,6 +122,8 @@ namespace xlsx_reader
         typed_cell(std::uint32_t in_row, std::uint32_t in_column, const extend_node_value* in_value);
         typed_cell(const typed_cell& other) = default;
         typed_cell& operator=(const typed_cell& other) = default;
+		template <typename T> 
+		std::optional<T> expect_value() const;
     };
 	class extend_node_value_constructor
 	{
@@ -133,7 +135,7 @@ namespace xlsx_reader
 		static extend_node_type_descriptor* parse_type(std::string_view type_string);
 		static extend_node_value* parse_value_with_type(const extend_node_type_descriptor* node_type, std::string_view text);
 		static typed_cell* parse_node(const extend_node_type_descriptor* type_desc, const cell* v_cell);
-	
+
 	};
 
 }

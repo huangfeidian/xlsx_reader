@@ -1357,5 +1357,14 @@ namespace xlsx_reader{
 			return v_text;
 		}
 	}
+	template<typename T>
+	optional<T> typed_cell::expect_value() const
+	{
+		if(!cur_typed_value)
+		{
+			return nullopt;
+		}
+		return cur_typed_value->get_value<T>();
+	}
 
 }
