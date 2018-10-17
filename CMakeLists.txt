@@ -21,6 +21,5 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # expected behaviour
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++lastest")
-# test
 ADD_EXECUTABLE("xlsx_test" ${XLSX_READER_TEST_LIST} ${XLSX_READER_SRC_LIST} ${XLSX_READER_THIRD_SRC_LIST})
 
