@@ -90,7 +90,8 @@ namespace xlsx_reader
 		friend bool operator!=(const extend_node_value& cur, const extend_node_value& other);
 		template <typename T>
 		std::optional<T> get_value() const;
-
+		template <typename... args>
+		std::optional<std::tuple<args...>> get_value() const;
 	};
 	template <>
 	std::optional<std::uint32_t> extend_node_value::get_value<std::uint32_t>() const;

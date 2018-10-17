@@ -1366,5 +1366,25 @@ namespace xlsx_reader{
 		}
 		return cur_typed_value->get_value<T>();
 	}
+	template<typename... args>
+	optional<tuple<args...>> extend_node_value::get_value() const
+	{
+		if(v_list.size() == 0)
+		{
+			return nullopt;
+		}
+		auto the_tuple_size = sizeof...(args);
+		if(v_list.size() != the_tuple_size)
+		{
+			return nullopt;
+		}
+
+	}
+	template<typename... args>
+	tuple<optional<args>...> get_tuple_value_from_vector(const vector<extend_node_value*>& v_list)
+	{
+		
+	}
+
 
 }

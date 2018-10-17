@@ -207,4 +207,40 @@ namespace xlsx_reader{
     {
         return typed_row_info.find(_idx)->second;
     }
+    const std::map<std::uint32_t, std::map<std::uint32_t, const typed_cell*>>& typed_worksheet::get_all_typed_row_info() const
+    {
+        return typed_row_info;
+    }
+    bool typed_worksheet::check_header_match(const std::vector<typed_header>& other_headers) const
+    {
+        if(typed_headers.size() != other_headers.size())
+        {
+            return false;
+        }
+        for(int i =0; i< other_headers.size(); i++)
+        {
+            if(!(typed_headers[i] == other_headers[i]))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+    bool typed_header::operator==(const typed_header& other) const
+    {
+        if(header_name != other.header_name)
+        {
+            return false;
+        }
+        if(type_desc == other.type_desc)
+        {
+            return true;
+        }
+        if(!type_desc || !other.type_desc)
+        {
+            return false;
+        }
+        return *type_desc == *other.type_desc;
+
+    }
 }

@@ -15,6 +15,7 @@ namespace xlsx_reader{
         typed_header(const extend_node_type_descriptor* in_type_desc, std::string_view in_header_name, std::string_view in_header_comment);
         friend std::ostream& operator<<(std::ostream& output_stream, const typed_header& in_typed_header);
         friend void to_json(json& j, const typed_header& cur_typed_header);
+        bool operator==(const typed_header& other) const;
     };
 
     class typed_worksheet: public worksheet
@@ -35,6 +36,9 @@ namespace xlsx_reader{
         std::optional<std::uint32_t> get_indexed_row(const extend_node_value& first_row_value) const;
         std::optional<std::reference_wrapper<const std::map<std::uint32_t, const typed_cell*>>> get_ref_row(std::string_view sheet_name, const extend_node_value& first_row_value) const;
 
+        const std::map<std::uint32_t, std::map<std::uint32_t, const typed_cell*>>& get_all_typed_row_info() const;
+
+        bool check_header_match(const std::vector<typed_header>& other_headers) const;
     protected:
         std::vector<typed_header> typed_headers;
         std::map<std::uint32_t, std::map<std::uint32_t, const typed_cell*>> typed_row_info;
