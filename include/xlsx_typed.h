@@ -4,6 +4,7 @@
 #include <xlsx_workbook.h>
 #include <nlohmann/json.hpp>
 #include <functional>
+#include <unordered_map>
 namespace xlsx_reader{
     using json = nlohmann::json;
     class typed_header
@@ -32,18 +33,21 @@ namespace xlsx_reader{
         // 获取所有的表头数据
         const std::vector<typed_header>& get_typed_headers();
         const workbook<typed_worksheet>* get_workbook() const;
+		// 根据表土
+		std::uint32_t get_header_idx(std::string_view header_name) const;
         // 根据第一列的值来获取所属的行
         std::optional<std::uint32_t> get_indexed_row(const extend_node_value& first_row_value) const;
         std::optional<std::reference_wrapper<const std::map<std::uint32_t, const typed_cell*>>> get_ref_row(std::string_view sheet_name, const extend_node_value& first_row_value) const;
 
         const std::map<std::uint32_t, std::map<std::uint32_t, const typed_cell*>>& get_all_typed_row_info() const;
 
-        bool check_header_match(const std::vector<typed_header>& other_headers) const;
+        bool check_header_match(const std::unordered_map<std::string_view, typed_header>& other_headers, std::string_view index_column_name, const std::vector<std::string_view>& int_ref_headers, const std::vector<std::string_view>& string_ref_headers) const;
     protected:
         std::vector<typed_header> typed_headers;
         std::map<std::uint32_t, std::map<std::uint32_t, const typed_cell*>> typed_row_info;
         std::vector<typed_cell> typed_cells;
         std::unordered_map<const extend_node_value&, std::uint32_t, extend_node_value_hash> _indexes;
+		std::unordered_map<std::string_view, std::uint32_t> header_column_index;
         void after_load_process();
     private:
         void convert_cell_to_typed_value();

@@ -1373,18 +1373,31 @@ namespace xlsx_reader{
 		{
 			return nullopt;
 		}
+		for(const auto i: v_list)
+		{
+			if(!i)
+			{
+				return nullopt;
+			}
+		}
 		auto the_tuple_size = sizeof...(args);
 		if(v_list.size() != the_tuple_size)
 		{
 			return nullopt;
 		}
+		return get_tuple_value_from_vector<args...>(onst vector<extend_node_value*>& v_list, std::index_sequence_for<args...>{});
 
 	}
-	template<typename... args>
-	tuple<optional<args>...> get_tuple_value_from_vector(const vector<extend_node_value*>& v_list)
+	template<typename... args, size_t... arg_idx>
+	optional<tuple<args>...> get_tuple_value_from_vector(const vector<extend_node_value*>& v_list, std::index_sequence<arg_idx...>)
 	{
-		
+		auto temp_result = make_tuple((*v_list[arg_idx]).get_value<arg>()...);
+
+		if(!(get<arg_idx>(temp_result) &&...))
+		{
+			return nullopt;
+		}
+		return make_tuple(get<arg_idx>(temp_result).value()...);
+
 	}
-
-
 }
