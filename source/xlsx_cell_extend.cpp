@@ -1120,14 +1120,15 @@ namespace xlsx_reader{
         case basic_node_type_descriptor::list:
         case basic_node_type_descriptor::tuple:
         case basic_node_type_descriptor::ref_id:
-			if(cur.v_list.size() != other.v_list.size())
+		{
+			if (cur.v_list.size() != other.v_list.size())
 			{
 				return false;
 			}
 			auto cur_size = cur.v_list.size();
-			for(int i=0; i< cur_size; i++)
+			for (int i = 0; i < cur_size; i++)
 			{
-				if(*cur.v_list[i] == *other.v_list[i])
+				if (*cur.v_list[i] == *other.v_list[i])
 				{
 					continue;
 				}
@@ -1137,6 +1138,8 @@ namespace xlsx_reader{
 				}
 			}
 			return true;
+		}
+			
         default:
             return false;
         }
@@ -1146,42 +1149,61 @@ namespace xlsx_reader{
 		return !(cur == other);
 	}
 
-	size_t extend_node_value_hash::operator()(const extend_node_value & s)
+	size_t extend_node_value_hash::operator()(const extend_node_value* s) const
 	{
-		switch(s.type_desc->_type)
+		if (!s)
+		{
+			return 0;
+		}
+		switch(s->type_desc->_type)
 		{
 		case basic_node_type_descriptor::comment:
         case basic_node_type_descriptor::string:
-            return std::hash<std::string_view>()(s.v_text);
+            return std::hash<std::string_view>()(s->v_text);
         case basic_node_type_descriptor::date:
         case basic_node_type_descriptor::datetime:
         case basic_node_type_descriptor::number_double:
-			return std::hash<double>()(s.v_double);
+			return std::hash<double>()(s->v_double);
         case basic_node_type_descriptor::number_32:
-			return std::hash<std::int32_t>()(s.v_int32);
+			return std::hash<std::int32_t>()(s->v_int32);
         case basic_node_type_descriptor::number_u32:
-            return std::hash<std::uint32_t>()(s.v_uint32);
+            return std::hash<std::uint32_t>()(s->v_uint32);
         case basic_node_type_descriptor::number_64:
-            return std::hash<std::int64_t>()(s.v_int64);
+            return std::hash<std::int64_t>()(s->v_int64);
         case basic_node_type_descriptor::number_u64:
-            return std::hash<std::uint64_t>()(s.v_uint64);
+            return std::hash<std::uint64_t>()(s->v_uint64);
         case basic_node_type_descriptor::number_bool:
-            return std::hash<bool>()(s.v_bool);
+            return std::hash<bool>()(s->v_bool);
         case basic_node_type_descriptor::number_float:
-			return std::hash<float>()(s.v_float);
+			return std::hash<float>()(s->v_float);
         case basic_node_type_descriptor::list:
         case basic_node_type_descriptor::tuple:
         case basic_node_type_descriptor::ref_id:
-			auto cur_size = s.v_list.size();
+		{
+			auto cur_size = s->v_list.size();
 			std::size_t result_hash = 0;
-			for(const auto & i: s.v_list)
+			for (const auto & i : s->v_list)
 			{
-				result_hash += operator()(*i) / cur_size;
+				result_hash += operator()(i) / cur_size;
 			}
 			return result_hash;
+		}
+			
         default:
             return 0;
         }
+	}
+	bool extend_node_value_ptr_equal::operator()(const extend_node_value* from, const extend_node_value* to) const
+	{
+		if(from == to)
+		{
+			return true;
+		}
+		if(!from ||!to)
+		{
+			return false;
+		}
+		return (*from == *to);
 	}
    typed_cell* extend_node_value_constructor::parse_node(const extend_node_type_descriptor* type_desc, const cell* in_cell_value)
     {

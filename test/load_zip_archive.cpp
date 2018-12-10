@@ -1,4 +1,4 @@
-#include <iostream>
+﻿#include <iostream>
 
 #include <vector>
 #include <sstream>
@@ -6,7 +6,7 @@
 #include <filesystem>
 #include <fstream>
 #include <streambuf>
-#include "miniz.h"
+#include <miniz/miniz_zip.h>
 
 using std::string;
 using std::cout;

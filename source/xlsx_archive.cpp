@@ -1,6 +1,6 @@
-#include <xlsx_archive.h>
+﻿#include <xlsx_archive.h>
 #include <xlsx_utils.h>
-#include <miniz.h>
+#include <miniz/miniz_zip.h>
 #include <unordered_map>
 #include <filesystem>
 #include <fstream>
@@ -32,6 +32,8 @@ namespace xlsx_reader
 		if (!status)
 		{
 			std::cerr << "invalid zip file " << file_path << " status " << cur_archive.m_last_error << std::endl;
+			valid_flag = false;
+			clear_resource();
 			return;
 		}
 
@@ -41,6 +43,8 @@ namespace xlsx_reader
 			if (!mz_zip_reader_file_stat(&cur_archive, i, &cur_file_stat))
 			{
 				std::cerr << "mz_zip_reader_file_stat failed" << std::endl;
+				valid_flag = false;
+				clear_resource();
 				return;
 			}
 			std::cout << " Filename " << cur_file_stat.m_filename << "comment " << cur_file_stat.m_comment <<
@@ -52,8 +56,11 @@ namespace xlsx_reader
 			if (!p)
 			{
 				std::cerr << "memory allocation fail for file " << cur_file_stat.m_filename << std::endl;
+				valid_flag = false;
+				clear_resource();
 				return;
 			}
+			valid_flag = true;
 			std::cout << "success extracted file " << cur_file_stat.m_filename << std::endl;
 			char* new_p = (char*)p;
 			archive_file_buffers.push_back(p);
@@ -120,12 +127,16 @@ namespace xlsx_reader
 		}
 		return all_share_strings;
 	}
-	archive::~archive()
+	void archive::clear_resource()
 	{
 		for(auto i: archive_file_buffers)
 		{
 			free(i);
 		}
 		archive_file_buffers.clear();
+	}
+	archive::~archive()
+	{
+		clear_resource();
 	}
 }

@@ -123,7 +123,7 @@ namespace xlsx_reader{
 				typed_cells.push_back(*cur_typed_cell);
 			}
 			typed_row_info[i.first] = cur_row_typed_info;
-			_indexes[*(cur_row_typed_info.cbegin()->second->cur_typed_value)] = i.first;
+			_indexes[cur_row_typed_info.cbegin()->second->cur_typed_value] = i.first;
 
 		}
 	}
@@ -171,7 +171,7 @@ namespace xlsx_reader{
 	{
 		return typed_headers;
 	}
-	optional<uint32_t> typed_worksheet::get_indexed_row(const extend_node_value& first_row_value) const
+	optional<uint32_t> typed_worksheet::get_indexed_row(const extend_node_value* first_row_value) const
 	{
 		auto iter = _indexes.find(first_row_value);
 		if(iter == _indexes.end())
@@ -183,7 +183,7 @@ namespace xlsx_reader{
 			return iter->second;
 		}
 	}
-	optional<reference_wrapper<const map<uint32_t, const typed_cell*>>> typed_worksheet::get_ref_row(string_view sheet_name, const extend_node_value& first_row_value) const
+	optional<reference_wrapper<const map<uint32_t, const typed_cell*>>> typed_worksheet::get_ref_row(string_view sheet_name, const extend_node_value*  first_row_value) const
 	{
 		auto current_workbook = get_workbook();
 		if(! current_workbook)
