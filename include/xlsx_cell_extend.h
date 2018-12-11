@@ -114,11 +114,17 @@ namespace xlsx_reader
 
 	struct extend_node_value_hash
 	{
-		std::size_t operator()(const extend_node_value& s);
+		std::size_t operator()(const extend_node_value* s) const;
+	};
+	struct extend_node_value_ptr_equal
+	{
+		bool operator()(const extend_node_value* from, const extend_node_value* to) const;
 	};
 	class typed_cell
     {
 	public:
+		static const int row_begin = 1;
+		static const int column_begin = 1;
         const extend_node_value* cur_typed_value;
 		std::uint32_t _row;
 		std::uint32_t _column;
