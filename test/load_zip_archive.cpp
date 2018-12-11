@@ -6,7 +6,13 @@
 #include <filesystem>
 #include <fstream>
 #include <streambuf>
+extern "C"
+{
 #include <miniz/miniz_zip.h>
+}
+
+
+
 
 using std::string;
 using std::cout;

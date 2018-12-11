@@ -33,7 +33,7 @@ namespace xlsx_reader{
         // 获取所有的表头数据
         const std::vector<typed_header>& get_typed_headers();
         const workbook<typed_worksheet>* get_workbook() const;
-		// 根据表土
+		// 根据表头名字返回列号 如果不存在则返回0
 		std::uint32_t get_header_idx(std::string_view header_name) const;
         // 根据第一列的值来获取所属的行
         std::optional<std::uint32_t> get_indexed_row(const extend_node_value* first_row_value) const;

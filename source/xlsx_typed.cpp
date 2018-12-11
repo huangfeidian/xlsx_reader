@@ -101,7 +101,7 @@ namespace xlsx_reader{
 	{
 		typed_cells.clear();
 		auto value_begin_row_idx = value_begin_row();
-		for(const auto i: row_info)
+		for(const auto& i: row_info)
 		{
 			if(i.first < value_begin_row_idx)
 			{
@@ -170,6 +170,17 @@ namespace xlsx_reader{
 	const vector<typed_header>& typed_worksheet::get_typed_headers()
 	{
 		return typed_headers;
+	}
+	uint32_t typed_worksheet::get_header_idx(string_view header_name) const
+	{
+		for (int i = 0; i < typed_headers.size(); i++)
+		{
+			if (typed_headers[i].header_name == header_name)
+			{
+				return i + 1;
+			}
+		}
+		return 0;
 	}
 	optional<uint32_t> typed_worksheet::get_indexed_row(const extend_node_value* first_row_value) const
 	{

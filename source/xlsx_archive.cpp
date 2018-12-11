@@ -1,12 +1,18 @@
 ﻿#include <xlsx_archive.h>
 #include <xlsx_utils.h>
-#include <miniz/miniz_zip.h>
+
 #include <unordered_map>
 #include <filesystem>
 #include <fstream>
 #include <streambuf>
 #include <sstream>
 #include <iostream>
+extern "C"
+{
+#include <miniz/miniz_zip.h>
+}
+
+
 
 namespace xlsx_reader
 {
@@ -22,7 +28,7 @@ namespace xlsx_reader
 		cur_all_content.reserve(input_file_stream.tellg());
 		input_file_stream.seekg(0, std::ios::beg);
 		cur_all_content.assign(std::istreambuf_iterator<char>(input_file_stream), std::istreambuf_iterator<char>());
-		std::cout << "minic version " << MZ_VERSION << std::endl;
+		std::cout << "miniz version " << MZ_VERSION << std::endl;
 		std::cout << "string size " << cur_all_content.size() << "file path " << current_path() << std::endl;
 		mz_zip_archive cur_archive;
 
