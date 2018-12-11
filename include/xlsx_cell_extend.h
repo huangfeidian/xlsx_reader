@@ -56,6 +56,7 @@ namespace xlsx_reader
 		std::optional<list_detail_t> get_list_detail_t() const;
 		std::optional<ref_detail_t> get_ref_detail_t() const;
 		std::optional<tuple_detail_t> get_tuple_detail_t() const;
+		~extend_node_type_descriptor();
 	};
 
 	struct extend_node_value
@@ -92,6 +93,7 @@ namespace xlsx_reader
 		std::optional<T> get_value() const;
 		template <typename... args>
 		std::optional<std::tuple<args...>> get_value() const;
+		~extend_node_value();
 	};
 	template <>
 	std::optional<std::uint32_t> extend_node_value::get_value<std::uint32_t>() const;

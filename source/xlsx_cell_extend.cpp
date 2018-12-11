@@ -621,6 +621,29 @@ namespace xlsx_reader{
 	{
 
 	}
+	extend_node_type_descriptor::~extend_node_type_descriptor()
+	{
+		if(_type == basic_node_type_descriptor::tuple)
+		{
+			auto temp_detail = get<extend_node_type_descriptor::tuple_detail_t>(_type_detail);
+			for(auto k : temp_detail.first)
+			{
+				if(k)
+				{
+					k->~extend_node_type_descriptor();
+				}
+			}
+		}
+		else if(_type == basic_node_type_descriptor::list)
+		{
+			auto temp_detail = get<extend_node_type_descriptor::list_detail_t>(_type_detail);
+			auto k = get<0>(temp_detail);
+			if(k)
+			{
+				k->~extend_node_type_descriptor();
+			}
+		}
+	}
 	ostream& operator<<(ostream& output_stream, const extend_node_type_descriptor& cur_type)
 	{
 		static unordered_map<basic_node_type_descriptor, string_view> type_to_string = {
@@ -1254,6 +1277,17 @@ namespace xlsx_reader{
             return nullptr;
         }
     }
+	extend_node_value::~extend_node_value()
+	{
+		for(auto i: v_list)
+		{
+			if(i)
+			{
+				i->~extend_node_value();
+			}
+		}
+		v_list.clear();
+	}
 	const typed_cell* extend_node_value_constructor::match_node(const cell* in_cell_value)
 	{
 		return extend_node_value_constructor::parse_node(type_desc, in_cell_value);
