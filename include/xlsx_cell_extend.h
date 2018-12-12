@@ -121,19 +121,19 @@ namespace xlsx_reader
 		bool operator()(const extend_node_value* from, const extend_node_value* to) const;
 	};
 	class typed_cell
-    {
+	{
 	public:
 		static const int row_begin = 1;
 		static const int column_begin = 1;
-        const extend_node_value* cur_typed_value;
+		const extend_node_value* cur_typed_value;
 		std::uint32_t _row;
 		std::uint32_t _column;
-        typed_cell(std::uint32_t in_row, std::uint32_t in_column, const extend_node_value* in_value);
-        typed_cell(const typed_cell& other) = default;
-        typed_cell& operator=(const typed_cell& other) = default;
+		typed_cell(std::uint32_t in_row, std::uint32_t in_column, const extend_node_value* in_value);
+		typed_cell(const typed_cell& other) = default;
+		typed_cell& operator=(const typed_cell& other) = default;
 		template <typename T> 
 		std::optional<T> expect_value() const;
-    };
+	};
 	class extend_node_value_constructor
 	{
 	public:
