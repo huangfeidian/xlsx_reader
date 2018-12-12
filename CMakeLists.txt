@@ -1,20 +1,24 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.1)
 
-PROJECT(XLSX_READER)
+PROJECT(xlsx_reader)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_FLAGS "-static ${CMAKE_CXX_FLAGS}")
 if(MSVC)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++latest")
 endif(MSVC)
 
-FIND_PACKAGE(MINIZ REQUIRED)
+set(CMAKE_DEBUG_POSTFIX "d")
+
+
+FIND_PACKAGE(MINIZ CONFIG REQUIRED)
 INCLUDE_DIRECTORIES(${MINIZ_INCLUDE_DIRS})
 
-FIND_PACKAGE(TINYXML2 REQUIRED)
+FIND_PACKAGE(TINYXML2 CONFIG REQUIRED)
 INCLUDE_DIRECTORIES(${TINYXML2_INCLUDE_DIRS})
 
-find_package(nlohmann_json REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
 INCLUDE_DIRECTORIES(${nlohmann_json_include_dirs})
 
 SET(XLSX_READER_SRC_DIR ${CMAKE_SOURCE_DIR}/source)
@@ -27,9 +31,38 @@ FILE(GLOB_RECURSE XLSX_READER_TEST_LIST ${XLSX_READER_TEST_DIR}/*.cpp)
 
 INCLUDE_DIRECTORIES(${XLSX_READER_HEADER_DIR})
 
-# https://cmake.org/cmake/help/latest/prop_tgt/CXX_STANDARD.html
 
-# expected behaviour
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++lastest")
-ADD_EXECUTABLE("xlsx_test" ${XLSX_READER_TEST_LIST} ${XLSX_READER_SRC_LIST} )
-target_link_libraries("xlsx_test" ${MINIZ_LIRRARIES} ${TINYXML_LIBRARIES} PRIVATE nlohmann_json::nlohmann_json)
+
+ADD_LIBRARY(xlsx_reader STATIC ${XLSX_READER_SRC_LIST})
+target_link_libraries(xlsx_reader miniz tinyxml2 nlohmann_json::nlohmann_json)
+
+ADD_EXECUTABLE(xlsx_test ${XLSX_READER_TEST_LIST})
+target_link_libraries(xlsx_test xlsx_reader)
+
+foreach(p LIB INCLUDE)
+	set(var CMAKE_INSTALL_${p}DIR)
+	if(NOT IS_ABSOLUTE "${${var}}")
+		set(${var} "${CMAKE_INSTALL_PREFIX}/${p}")
+	endif()
+endforeach()
+
+export(TARGETS xlsx_reader
+      FILE ${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}Targets.cmake)
+
+file(WRITE
+    ${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}Config.cmake
+    "include(\${CMAKE_CURRENT_LIST_DIR}/${CMAKE_PROJECT_NAME}Targets.cmake)\n")
+
+install(FILES
+        ${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}Config.cmake
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${CMAKE_PROJECT_NAME})
+
+install(TARGETS ${PROJECT_NAME} EXPORT ${PROJECT_NAME}Targets
+    ARCHIVE  DESTINATION lib
+    LIBRARY DESTINATION lib
+    )
+
+install(DIRECTORY ${XLSX_READER_HEADER_DIR}/ DESTINATION include/${PROJECT_NAME})
+
+install(EXPORT ${CMAKE_PROJECT_NAME}Targets
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${CMAKE_PROJECT_NAME})
