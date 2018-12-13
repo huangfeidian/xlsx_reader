@@ -1,4 +1,4 @@
-﻿#include <xlsx_cell_extend.h>
+﻿#include <xlsx_typed_cell.h>
 #include <unordered_map>
 #include <algorithm>
 #include <xlsx_utils.h>
@@ -131,13 +131,10 @@ namespace xlsx_reader{
 			return result;
 		}
 	}
-	extend_node_type_descriptor* parse_type_from_tokens(vector<string_view> tokens)
+	typed_node_type_descriptor* parse_type_from_tokens(vector<string_view> tokens)
 	{
 		static unordered_map<string_view, basic_node_type_descriptor> str_to_type_map = {
 			{"comment", basic_node_type_descriptor::comment},
-			{"date", basic_node_type_descriptor::date},
-			{"time", basic_node_type_descriptor::time},
-			{"datetime", basic_node_type_descriptor::datetime},
 			{"str", basic_node_type_descriptor::string},
 			{"bool", basic_node_type_descriptor::number_bool},
 			{"uint32", basic_node_type_descriptor::number_u32},
@@ -156,7 +153,7 @@ namespace xlsx_reader{
 			auto map_iter = str_to_type_map.find(tokens[0]);
 			if(map_iter != str_to_type_map.end())
 			{
-				return new extend_node_type_descriptor(map_iter->second);
+				return new typed_node_type_descriptor(map_iter->second);
 			}
 			else
 			{
@@ -192,7 +189,7 @@ namespace xlsx_reader{
 				{
 					return nullptr;
 				}
-				auto result = new extend_node_type_descriptor(basic_node_type_descriptor::ref_id);
+				auto result = new typed_node_type_descriptor(basic_node_type_descriptor::ref_id);
 				result->_type_detail = make_tuple(cur_workbook, cur_worksheet, cur_type_desc);
 				return result;
 			}
@@ -269,14 +266,14 @@ namespace xlsx_reader{
 					}
 					else
 					{
-						return new extend_node_type_descriptor(make_tuple(temp_type_result, repeat_times.value(), splitor));
+						return new typed_node_type_descriptor(make_tuple(temp_type_result, repeat_times.value(), splitor));
 					}
 
 				}
 				else
 				{
 					//tuple(xx, xx, seperator)
-					vector<extend_node_type_descriptor*> type_vec;
+					vector<typed_node_type_descriptor*> type_vec;
 					char cur_splitor = ',';
 					auto splitor_info = grouped_tokens.back();
 					if(splitor_info.size() == 1 && splitor_info[0].size() == 1)
@@ -297,83 +294,14 @@ namespace xlsx_reader{
 						}
 						
 					}
-					return new extend_node_type_descriptor(make_pair(type_vec, cur_splitor));
+					return new typed_node_type_descriptor(make_pair(type_vec, cur_splitor));
 				}
 
 			}
 		}
 		return nullptr;
 	}
-	extend_node_value* parse_value_with_type(const extend_node_type_descriptor* node_type, const cell_value& in_cell_value)
-	{
-		switch(node_type->_type)
-		{
-		case basic_node_type_descriptor::comment:
-			return nullptr;
-		case basic_node_type_descriptor::date:
-			if(in_cell_value._type != cell_type::number_double)
-			{
-				return nullptr;
-			}
-			return new extend_node_value(static_cast<int>(in_cell_value.double_v));
-		case basic_node_type_descriptor::time:
-			if(in_cell_value._type != cell_type::number_double)
-			{
-				return nullptr;
-			}
-			return new extend_node_value(in_cell_value.double_v);
-		case basic_node_type_descriptor::datetime:
-			if(in_cell_value._type != cell_type::number_double)
-			{
-				return nullptr;
-			}
-			return new extend_node_value(in_cell_value.double_v);
-		case basic_node_type_descriptor::string:
-			return new extend_node_value(in_cell_value._text);
-		case basic_node_type_descriptor::number_bool:
-			return new extend_node_value(in_cell_value.bool_v);
-		case basic_node_type_descriptor::number_32:
-			if(in_cell_value._type != cell_type::number_double)
-			{
-				return nullptr;
-			}
-			return new extend_node_value(static_cast<int>(in_cell_value.double_v));
-		case basic_node_type_descriptor::number_u32:
-			if(in_cell_value._type != cell_type::number_double)
-			{
-				return nullptr;
-			}
-			return new extend_node_value(static_cast<uint32_t>(in_cell_value.double_v));
-		case basic_node_type_descriptor::number_64:
-			if(in_cell_value._type != cell_type::number_double)
-			{
-				return nullptr;
-			}
-			return new extend_node_value(static_cast<int64_t>(in_cell_value.double_v));
-		case basic_node_type_descriptor::number_u64:
-			if(in_cell_value._type != cell_type::number_double)
-			{
-				return nullptr;
-			}
-			return new extend_node_value(static_cast<uint64_t>(in_cell_value.double_v));
-		case basic_node_type_descriptor::number_float:
-			if(in_cell_value._type != cell_type::number_double)
-			{
-				return nullptr;
-			}
-			return new extend_node_value(static_cast<float>(in_cell_value.double_v));
-		case basic_node_type_descriptor::number_double:
-			if(in_cell_value._type != cell_type::number_double)
-			{
-				return nullptr;
-			}
-			return new extend_node_value(in_cell_value.double_v);
-		default:
-			return nullptr;
-
-		}
-	}
-	extend_node_value* extend_node_value_constructor::parse_value_with_type(const extend_node_type_descriptor* node_type, string_view text)
+	typed_value* typed_node_value_constructor::parse_value_with_type(const typed_node_type_descriptor* node_type, string_view text)
 	{
 		text.remove_prefix(min(text.find_first_not_of(" "), text.size()));
 		text.remove_suffix(text.size() - min(text.find_last_not_of(" ") + 1, text.size()));
@@ -387,51 +315,15 @@ namespace xlsx_reader{
 			case basic_node_type_descriptor::comment:
 				return nullptr;
 			case basic_node_type_descriptor::string:
-				return new extend_node_value(text);
-			case basic_node_type_descriptor::date:
-				if (current_double_value.has_value())
-				{
-					return new extend_node_value(static_cast<uint32_t>(current_double_value.value()));
-				}
-				else
-				{
-					return nullptr;
-				}
-			case basic_node_type_descriptor::time:
-				if (current_double_value.has_value())
-				{
-					return new extend_node_value(current_double_value.value());
-				}
-				else
-				{
-					return nullptr;
-				}
-			case basic_node_type_descriptor::datetime:
-
-				if (current_double_value.has_value())
-				{
-					return new extend_node_value(current_double_value.value());
-				}
-				else
-				{
-					return nullptr;
-				}
+				return new typed_value(text);
 			case basic_node_type_descriptor::number_bool:
-				if (text == "TRUE"sv)
+				if(text == "1"sv)
 				{
-					return new extend_node_value(true);
-				}
-				else if (text == "FALSE"sv)
-				{
-					return new extend_node_value(false);
-				}
-				else if (text == "1"sv)
-				{
-					return new extend_node_value(true);
+					return new typed_value(true);
 				}
 				else if(text == "0"sv)
 				{
-					return new extend_node_value(false);
+					return new typed_value(false);
 				}
 				else
 				{
@@ -440,7 +332,7 @@ namespace xlsx_reader{
 			case basic_node_type_descriptor::number_32:
 				if (current_double_value.has_value())
 				{
-					return new extend_node_value(static_cast<int32_t>(current_double_value.value()));
+					return new typed_value(static_cast<int32_t>(current_double_value.value()));
 				}
 				else
 				{
@@ -449,7 +341,7 @@ namespace xlsx_reader{
 			case basic_node_type_descriptor::number_u32:
 				if (current_double_value.has_value())
 				{
-					return new extend_node_value(static_cast<uint32_t>(current_double_value.value()));
+					return new typed_value(static_cast<uint32_t>(current_double_value.value()));
 				}
 				else
 				{
@@ -458,7 +350,7 @@ namespace xlsx_reader{
 			case basic_node_type_descriptor::number_64:
 				if (current_double_value.has_value())
 				{
-					return new extend_node_value(static_cast<int64_t>(current_double_value.value()));
+					return new typed_value(static_cast<int64_t>(current_double_value.value()));
 				}
 				else
 				{
@@ -467,7 +359,7 @@ namespace xlsx_reader{
 			case basic_node_type_descriptor::number_u64:
 				if (current_double_value.has_value())
 				{
-					return new extend_node_value(static_cast<uint64_t>(current_double_value.value()));
+					return new typed_value(static_cast<uint64_t>(current_double_value.value()));
 				}
 				else
 				{
@@ -476,7 +368,7 @@ namespace xlsx_reader{
 			case basic_node_type_descriptor::number_float:
 				if (current_double_value.has_value())
 				{
-					return new extend_node_value(static_cast<float>(current_double_value.value()));
+					return new typed_value(static_cast<float>(current_double_value.value()));
 				}
 				else
 				{
@@ -485,7 +377,7 @@ namespace xlsx_reader{
 			case basic_node_type_descriptor::number_double:
 				if (current_double_value.has_value())
 				{
-					return new extend_node_value(current_double_value.value());
+					return new typed_value(current_double_value.value());
 				}
 				else
 				{
@@ -493,19 +385,19 @@ namespace xlsx_reader{
 				}
 			case basic_node_type_descriptor::ref_id:
 			{
-				auto cur_ref_detail = std::get<extend_node_type_descriptor::ref_detail_t>(node_type->_type_detail);
+				auto cur_ref_detail = std::get<typed_node_type_descriptor::ref_detail_t>(node_type->_type_detail);
 				if (std::get<2>(cur_ref_detail) == "str"sv)
 				{
-					return new extend_node_value(node_type, text);
+					return new typed_value(node_type, text);
 				}
 				else
 				{
-					return new extend_node_value(static_cast<uint64_t>(current_double_value.value()));
+					return new typed_value(static_cast<uint64_t>(current_double_value.value()));
 				}
 			}
 			case basic_node_type_descriptor::tuple:
 			{
-				auto cur_tuple_detail = std::get<extend_node_type_descriptor::tuple_detail_t>(node_type->_type_detail);
+				auto cur_tuple_detail = std::get<typed_node_type_descriptor::tuple_detail_t>(node_type->_type_detail);
 				char sep = cur_tuple_detail.second;
 				auto type_list = cur_tuple_detail.first;
 				text = strip_parenthesis(text);
@@ -514,7 +406,7 @@ namespace xlsx_reader{
 				{
 					return nullptr;
 				}
-				vector<extend_node_value *> sub_values;
+				vector<typed_value *> sub_values;
 				for (int i = 0; i < type_list.size(); i++)
 				{
 					auto cur_value = parse_value_with_type(type_list[i], tokens[i]);
@@ -524,17 +416,17 @@ namespace xlsx_reader{
 					}
 					sub_values.push_back(cur_value);
 				}
-				return new extend_node_value(node_type, sub_values);
+				return new typed_value(node_type, sub_values);
 			}
 			case basic_node_type_descriptor::list:
 			{
-				auto cur_list_detail = std::get<extend_node_type_descriptor::list_detail_t>(node_type->_type_detail);
+				auto cur_list_detail = std::get<typed_node_type_descriptor::list_detail_t>(node_type->_type_detail);
 				uint32_t list_size = std::get<uint32_t>(cur_list_detail);
 				char sep = std::get<char>(cur_list_detail);
-				auto unit_type = std::get<extend_node_type_descriptor *>(cur_list_detail);
+				auto unit_type = std::get<typed_node_type_descriptor *>(cur_list_detail);
 				text = strip_parenthesis(text);
 				auto tokens = split_string(text, sep);
-				vector<extend_node_value *> sub_values;
+				vector<typed_value *> sub_values;
 				if (list_size == 0)
 				{
 					for (auto one_token : tokens)
@@ -564,13 +456,13 @@ namespace xlsx_reader{
 						sub_values.push_back(cur_value);
 					}
 				}
-				return new extend_node_value(node_type, sub_values);
+				return new typed_value(node_type, sub_values);
 			}
 			default:
 				return nullptr;
 		}
 	}
-	optional<extend_node_type_descriptor::list_detail_t> extend_node_type_descriptor::get_list_detail_t() const
+	optional<typed_node_type_descriptor::list_detail_t> typed_node_type_descriptor::get_list_detail_t() const
 	{
 		if(_type != basic_node_type_descriptor::list)
 		{
@@ -578,11 +470,11 @@ namespace xlsx_reader{
 		}
 		else
 		{
-			return std::get<extend_node_type_descriptor::list_detail_t>(_type_detail);
+			return std::get<typed_node_type_descriptor::list_detail_t>(_type_detail);
 		}
 	}
 
-	optional<extend_node_type_descriptor::ref_detail_t> extend_node_type_descriptor::get_ref_detail_t() const
+	optional<typed_node_type_descriptor::ref_detail_t> typed_node_type_descriptor::get_ref_detail_t() const
 	{
 		if(_type != basic_node_type_descriptor::ref_id)
 		{
@@ -590,11 +482,11 @@ namespace xlsx_reader{
 		}
 		else
 		{
-			return std::get<extend_node_type_descriptor::ref_detail_t>(_type_detail);
+			return std::get<typed_node_type_descriptor::ref_detail_t>(_type_detail);
 		}
 	}
 
-	optional<extend_node_type_descriptor::tuple_detail_t> extend_node_type_descriptor::get_tuple_detail_t() const
+	optional<typed_node_type_descriptor::tuple_detail_t> typed_node_type_descriptor::get_tuple_detail_t() const
 	{
 		if(_type != basic_node_type_descriptor::tuple)
 		{
@@ -602,63 +494,60 @@ namespace xlsx_reader{
 		}
 		else
 		{
-			return std::get<extend_node_type_descriptor::tuple_detail_t>(_type_detail);
+			return std::get<typed_node_type_descriptor::tuple_detail_t>(_type_detail);
 		}
 	}
 
-	extend_node_type_descriptor::extend_node_type_descriptor()
+	typed_node_type_descriptor::typed_node_type_descriptor()
 	{
 		_type = basic_node_type_descriptor::comment;
 	}
-	extend_node_type_descriptor::extend_node_type_descriptor(basic_node_type_descriptor in_type)
+	typed_node_type_descriptor::typed_node_type_descriptor(basic_node_type_descriptor in_type)
 	{
 		_type = in_type;
 	}
-	extend_node_type_descriptor::extend_node_type_descriptor(const extend_node_type_descriptor::tuple_detail_t& tuple_detail):
+	typed_node_type_descriptor::typed_node_type_descriptor(const typed_node_type_descriptor::tuple_detail_t& tuple_detail):
 		_type(basic_node_type_descriptor::tuple), _type_detail(tuple_detail)
 	{
 
 	}
-	extend_node_type_descriptor::extend_node_type_descriptor(const extend_node_type_descriptor::list_detail_t& list_detail):
+	typed_node_type_descriptor::typed_node_type_descriptor(const typed_node_type_descriptor::list_detail_t& list_detail):
 		_type(basic_node_type_descriptor::list), _type_detail(list_detail)
 	{
 
 	}
-	extend_node_type_descriptor::extend_node_type_descriptor(const extend_node_type_descriptor::ref_detail_t& ref_detail)
+	typed_node_type_descriptor::typed_node_type_descriptor(const typed_node_type_descriptor::ref_detail_t& ref_detail)
 		:_type(basic_node_type_descriptor::ref_id), _type_detail(ref_detail)
 	{
 
 	}
-	extend_node_type_descriptor::~extend_node_type_descriptor()
+	typed_node_type_descriptor::~typed_node_type_descriptor()
 	{
 		if(_type == basic_node_type_descriptor::tuple)
 		{
-			auto temp_detail = get<extend_node_type_descriptor::tuple_detail_t>(_type_detail);
+			auto temp_detail = get<typed_node_type_descriptor::tuple_detail_t>(_type_detail);
 			for(auto k : temp_detail.first)
 			{
 				if(k)
 				{
-					k->~extend_node_type_descriptor();
+					k->~typed_node_type_descriptor();
 				}
 			}
 		}
 		else if(_type == basic_node_type_descriptor::list)
 		{
-			auto temp_detail = get<extend_node_type_descriptor::list_detail_t>(_type_detail);
+			auto temp_detail = get<typed_node_type_descriptor::list_detail_t>(_type_detail);
 			auto k = get<0>(temp_detail);
 			if(k)
 			{
-				k->~extend_node_type_descriptor();
+				k->~typed_node_type_descriptor();
 			}
 		}
 	}
-	ostream& operator<<(ostream& output_stream, const extend_node_type_descriptor& cur_type)
+	ostream& operator<<(ostream& output_stream, const typed_node_type_descriptor& cur_type)
 	{
 		static unordered_map<basic_node_type_descriptor, string_view> type_to_string = {
 			{basic_node_type_descriptor::comment, "comment"},
-			{basic_node_type_descriptor::date, "date"},
-			{basic_node_type_descriptor::time, "time"},
-			{basic_node_type_descriptor::datetime, "datetime"},
 			{basic_node_type_descriptor::string, "string"},
 			{basic_node_type_descriptor::number_bool, "bool"},
 			{basic_node_type_descriptor::number_u32, "uint32"},
@@ -679,7 +568,7 @@ namespace xlsx_reader{
 		output_stream<<temp_iter->second;
 		if(cur_type._type == basic_node_type_descriptor::ref_id)
 		{
-			auto temp_detail = std::get<extend_node_type_descriptor::ref_detail_t>(cur_type._type_detail);
+			auto temp_detail = std::get<typed_node_type_descriptor::ref_detail_t>(cur_type._type_detail);
 			string_view cur_workbook, cur_worksheet, cur_ref_type;
 			std::tie(cur_workbook, cur_worksheet, cur_ref_type) = temp_detail;
 			if(cur_workbook.empty())
@@ -694,7 +583,7 @@ namespace xlsx_reader{
 		}
 		else if(cur_type._type == basic_node_type_descriptor::tuple)
 		{
-			auto temp_detail = std::get<extend_node_type_descriptor::tuple_detail_t>(cur_type._type_detail);
+			auto temp_detail = std::get<typed_node_type_descriptor::tuple_detail_t>(cur_type._type_detail);
 			output_stream<<"(";
 
 			for(int i = 0; i< temp_detail.first.size(); i++)
@@ -714,7 +603,7 @@ namespace xlsx_reader{
 		}
 		else if(cur_type._type == basic_node_type_descriptor::list)
 		{
-			auto temp_detail = std::get<extend_node_type_descriptor::list_detail_t>(cur_type._type_detail);
+			auto temp_detail = std::get<typed_node_type_descriptor::list_detail_t>(cur_type._type_detail);
 			output_stream<<"("<<*std::get<0>(temp_detail)<<", "<<std::get<1>(temp_detail);
 			auto sep = std::get<2>(temp_detail);
 			if(sep != ',')
@@ -729,7 +618,7 @@ namespace xlsx_reader{
 			return output_stream;
 		}
 	}
-	bool operator==(const extend_node_type_descriptor& cur, const extend_node_type_descriptor& other)
+	bool operator==(const typed_node_type_descriptor& cur, const typed_node_type_descriptor& other)
 	{
 		if(cur._type != other._type)
 		{
@@ -738,8 +627,6 @@ namespace xlsx_reader{
 		switch(cur._type)
 		{
 			case basic_node_type_descriptor::comment:
-			case basic_node_type_descriptor::date:
-			case basic_node_type_descriptor::datetime:
 			case basic_node_type_descriptor::string:
 			case basic_node_type_descriptor::number_bool:
 			case basic_node_type_descriptor::number_32:
@@ -755,8 +642,8 @@ namespace xlsx_reader{
 				{
 					return false;
 				}
-				auto cur_detail = std::get<extend_node_type_descriptor::list_detail_t>(cur._type_detail);
-				auto other_detail = std::get<extend_node_type_descriptor::list_detail_t>(other._type_detail);
+				auto cur_detail = std::get<typed_node_type_descriptor::list_detail_t>(cur._type_detail);
+				auto other_detail = std::get<typed_node_type_descriptor::list_detail_t>(other._type_detail);
 				if(std::get<1>(cur_detail) != std::get<1>(other_detail))
 				{
 					return false;
@@ -777,8 +664,8 @@ namespace xlsx_reader{
 				{
 					return false;
 				}
-				auto cur_detail = std::get<extend_node_type_descriptor::ref_detail_t>(cur._type_detail);
-				auto other_detail = std::get<extend_node_type_descriptor::ref_detail_t>(other._type_detail);
+				auto cur_detail = std::get<typed_node_type_descriptor::ref_detail_t>(cur._type_detail);
+				auto other_detail = std::get<typed_node_type_descriptor::ref_detail_t>(other._type_detail);
 				return cur_detail == other_detail;
 			}
 				
@@ -788,8 +675,8 @@ namespace xlsx_reader{
 				{
 					return false;
 				}
-				auto cur_detail = std::get<extend_node_type_descriptor::tuple_detail_t>(cur._type_detail);
-				auto other_detail = std::get<extend_node_type_descriptor::tuple_detail_t>(other._type_detail);
+				auto cur_detail = std::get<typed_node_type_descriptor::tuple_detail_t>(cur._type_detail);
+				auto other_detail = std::get<typed_node_type_descriptor::tuple_detail_t>(other._type_detail);
 				if(cur_detail.first.size() != other_detail.first.size())
 				{
 					return false;
@@ -811,29 +698,23 @@ namespace xlsx_reader{
 				return false;
 		}
 	}
-	bool operator!=(const extend_node_type_descriptor& cur, const extend_node_type_descriptor& other)
+	bool operator!=(const typed_node_type_descriptor& cur, const typed_node_type_descriptor& other)
 	{
 		return !(cur == other);
 	}
-	extend_node_type_descriptor* extend_node_value_constructor::parse_type(string_view type_string)
+	typed_node_type_descriptor* typed_node_value_constructor::parse_type(string_view type_string)
 	{
 		auto all_tokens = parse_token_from_type_str(type_string);
 		return parse_type_from_tokens(all_tokens);
 	}
-	ostream& operator<<(ostream& output_stream, const extend_node_value& cur_value)
+	ostream& operator<<(ostream& output_stream, const typed_value& cur_value)
 	{
 		switch(cur_value.type_desc->_type)
 		{
 			case basic_node_type_descriptor::comment:
 				return output_stream<<cur_value.v_text;
-			case basic_node_type_descriptor::date:
-				return output_stream<<date::from_number(cur_value.v_int32, calendar::windows_1900).to_string();
-			case basic_node_type_descriptor::time:
-				return output_stream<<time::from_number(cur_value.v_double).to_string();
-			case basic_node_type_descriptor::datetime:
-				return output_stream<<datetime::from_number(cur_value.v_double, calendar::windows_1900).to_string();
 			case basic_node_type_descriptor::number_bool:
-				return output_stream<<(cur_value.v_bool?"TRUE":"FALSE");
+				return output_stream<<(cur_value.v_bool?"1":"0");
 			case basic_node_type_descriptor::number_32:
 				return output_stream<<cur_value.v_int32;
 			case basic_node_type_descriptor::number_u32:
@@ -852,7 +733,7 @@ namespace xlsx_reader{
 				return output_stream<<cur_value.v_text;
 			case basic_node_type_descriptor::list:
 			{
-				auto cur_list_detail = std::get<extend_node_type_descriptor::list_detail_t>(cur_value.type_desc->_type_detail);
+				auto cur_list_detail = std::get<typed_node_type_descriptor::list_detail_t>(cur_value.type_desc->_type_detail);
 				char sep = std::get<2>(cur_list_detail);
 				output_stream<<"(";
 				int cur_size = cur_value.v_list.size();
@@ -868,7 +749,7 @@ namespace xlsx_reader{
 			}
 			case basic_node_type_descriptor::tuple:
 			{
-				auto cur_tuple_detail = std::get<extend_node_type_descriptor::tuple_detail_t>(cur_value.type_desc->_type_detail);
+				auto cur_tuple_detail = std::get<typed_node_type_descriptor::tuple_detail_t>(cur_value.type_desc->_type_detail);
 				char sep = cur_tuple_detail.second;
 				output_stream<<"(";
 				int cur_size = cur_value.v_list.size();
@@ -888,21 +769,18 @@ namespace xlsx_reader{
 		}
 	}
 	
-	const extend_node_type_descriptor* extend_node_type_descriptor::get_basic_type_desc(basic_node_type_descriptor in_type)
+	const typed_node_type_descriptor* typed_node_type_descriptor::get_basic_type_desc(basic_node_type_descriptor in_type)
 	{
-		static vector<extend_node_type_descriptor> result = {
-			extend_node_type_descriptor(basic_node_type_descriptor::comment),
-			extend_node_type_descriptor(basic_node_type_descriptor::date),
-			extend_node_type_descriptor(basic_node_type_descriptor::time),
-			extend_node_type_descriptor(basic_node_type_descriptor::datetime),
-			extend_node_type_descriptor(basic_node_type_descriptor::string),
-			extend_node_type_descriptor(basic_node_type_descriptor::number_bool),
-			extend_node_type_descriptor(basic_node_type_descriptor::number_u32),
-			extend_node_type_descriptor(basic_node_type_descriptor::number_32),
-			extend_node_type_descriptor(basic_node_type_descriptor::number_u64),
-			extend_node_type_descriptor(basic_node_type_descriptor::number_64),
-			extend_node_type_descriptor(basic_node_type_descriptor::number_float),
-			extend_node_type_descriptor(basic_node_type_descriptor::number_double),
+		static vector<typed_node_type_descriptor> result = {
+			typed_node_type_descriptor(basic_node_type_descriptor::comment),
+			typed_node_type_descriptor(basic_node_type_descriptor::string),
+			typed_node_type_descriptor(basic_node_type_descriptor::number_bool),
+			typed_node_type_descriptor(basic_node_type_descriptor::number_u32),
+			typed_node_type_descriptor(basic_node_type_descriptor::number_32),
+			typed_node_type_descriptor(basic_node_type_descriptor::number_u64),
+			typed_node_type_descriptor(basic_node_type_descriptor::number_64),
+			typed_node_type_descriptor(basic_node_type_descriptor::number_float),
+			typed_node_type_descriptor(basic_node_type_descriptor::number_double),
 		};
 		if (static_cast<uint32_t>(in_type) > static_cast<uint32_t>(basic_node_type_descriptor::number_double))
 		{
@@ -914,68 +792,68 @@ namespace xlsx_reader{
 		}
 	}
 
-	extend_node_value::extend_node_value()
+	typed_value::typed_value()
 		:type_desc(nullptr)
 	{
 
 	}
-	extend_node_value::extend_node_value(bool in_value):
-		type_desc(extend_node_type_descriptor::get_basic_type_desc(basic_node_type_descriptor::number_bool))
+	typed_value::typed_value(bool in_value):
+		type_desc(typed_node_type_descriptor::get_basic_type_desc(basic_node_type_descriptor::number_bool))
 	{
 		v_bool = in_value;
 	}
-	extend_node_value::extend_node_value(uint32_t in_value) :
-		type_desc(extend_node_type_descriptor::get_basic_type_desc(basic_node_type_descriptor::number_u32))
+	typed_value::typed_value(uint32_t in_value) :
+		type_desc(typed_node_type_descriptor::get_basic_type_desc(basic_node_type_descriptor::number_u32))
 	{
 		v_uint32 = in_value;
 	}
-	extend_node_value::extend_node_value(int32_t in_value) :
-		type_desc(extend_node_type_descriptor::get_basic_type_desc(basic_node_type_descriptor::number_32))
+	typed_value::typed_value(int32_t in_value) :
+		type_desc(typed_node_type_descriptor::get_basic_type_desc(basic_node_type_descriptor::number_32))
 	{
 		v_int32 = in_value;
 	}
-	extend_node_value::extend_node_value(uint64_t in_value) :
-		type_desc(extend_node_type_descriptor::get_basic_type_desc(basic_node_type_descriptor::number_u64))
+	typed_value::typed_value(uint64_t in_value) :
+		type_desc(typed_node_type_descriptor::get_basic_type_desc(basic_node_type_descriptor::number_u64))
 	{
 		v_uint64 = in_value;
 	}
-	extend_node_value::extend_node_value(int64_t in_value) :
-		type_desc(extend_node_type_descriptor::get_basic_type_desc(basic_node_type_descriptor::number_64))
+	typed_value::typed_value(int64_t in_value) :
+		type_desc(typed_node_type_descriptor::get_basic_type_desc(basic_node_type_descriptor::number_64))
 	{
 		v_int64 = in_value;
 	}
-	extend_node_value::extend_node_value(float in_value) :
-		type_desc(extend_node_type_descriptor::get_basic_type_desc(basic_node_type_descriptor::number_float))
+	typed_value::typed_value(float in_value) :
+		type_desc(typed_node_type_descriptor::get_basic_type_desc(basic_node_type_descriptor::number_float))
 	{
 		v_float = in_value;
 	}
-	extend_node_value::extend_node_value(double in_value) :
-		type_desc(extend_node_type_descriptor::get_basic_type_desc(basic_node_type_descriptor::number_double))
+	typed_value::typed_value(double in_value) :
+		type_desc(typed_node_type_descriptor::get_basic_type_desc(basic_node_type_descriptor::number_double))
 	{
 		v_double = in_value;
 	}
-	extend_node_value::extend_node_value(string_view in_value) :
-		type_desc(extend_node_type_descriptor::get_basic_type_desc(basic_node_type_descriptor::string))
+	typed_value::typed_value(string_view in_value) :
+		type_desc(typed_node_type_descriptor::get_basic_type_desc(basic_node_type_descriptor::string))
 	{
 		v_text = in_value;
 	}
-	extend_node_value::extend_node_value(const extend_node_type_descriptor* in_type_desc, string_view in_value):
+	typed_value::typed_value(const typed_node_type_descriptor* in_type_desc, string_view in_value):
 		type_desc(in_type_desc)
 	{
 		v_text = in_value;
 	}
 
-	extend_node_value::extend_node_value(const extend_node_type_descriptor* in_type_desc, vector<extend_node_value*> in_value)
+	typed_value::typed_value(const typed_node_type_descriptor* in_type_desc, vector<typed_value*> in_value)
 		: type_desc(in_type_desc), v_list(in_value)
 	{
 	}
 
-	typed_cell::typed_cell(uint32_t in_row, uint32_t in_column, const extend_node_value* in_value):_row(in_row), _column(in_column), cur_typed_value(in_value)
+	typed_cell::typed_cell(uint32_t in_row, uint32_t in_column, const typed_value* in_value):_row(in_row), _column(in_column), cur_typed_value(in_value)
 	{
 
 	}
 
-	bool operator==(const extend_node_value& cur, const extend_node_value& other)
+	bool operator==(const typed_value& cur, const typed_value& other)
 	{
 		if(!cur.type_desc || ! other.type_desc)
 		{
@@ -988,27 +866,25 @@ namespace xlsx_reader{
 		switch(cur.type_desc->_type)
 		{
 		case basic_node_type_descriptor::comment:
-        case basic_node_type_descriptor::string:
-            return cur.v_text == other.v_text;
-        case basic_node_type_descriptor::date:
-        case basic_node_type_descriptor::datetime:
-        case basic_node_type_descriptor::number_double:
+		case basic_node_type_descriptor::string:
+			return cur.v_text == other.v_text;
+		case basic_node_type_descriptor::number_double:
 			return cur.v_double == other.v_double;
-        case basic_node_type_descriptor::number_32:
+		case basic_node_type_descriptor::number_32:
 			return cur.v_int32 == other.v_int32;
-        case basic_node_type_descriptor::number_u32:
-            return cur.v_uint32 == other.v_uint32;
-        case basic_node_type_descriptor::number_64:
-            return cur.v_int64 == other.v_int64;
-        case basic_node_type_descriptor::number_u64:
-            return cur.v_uint64 == other.v_uint64;
-        case basic_node_type_descriptor::number_bool:
-            return cur.v_bool == other.v_bool;
-        case basic_node_type_descriptor::number_float:
+		case basic_node_type_descriptor::number_u32:
+			return cur.v_uint32 == other.v_uint32;
+		case basic_node_type_descriptor::number_64:
+			return cur.v_int64 == other.v_int64;
+		case basic_node_type_descriptor::number_u64:
+			return cur.v_uint64 == other.v_uint64;
+		case basic_node_type_descriptor::number_bool:
+			return cur.v_bool == other.v_bool;
+		case basic_node_type_descriptor::number_float:
 			return cur.v_float == other.v_float;
-        case basic_node_type_descriptor::list:
-        case basic_node_type_descriptor::tuple:
-        case basic_node_type_descriptor::ref_id:
+		case basic_node_type_descriptor::list:
+		case basic_node_type_descriptor::tuple:
+		case basic_node_type_descriptor::ref_id:
 		{
 			if (cur.v_list.size() != other.v_list.size())
 			{
@@ -1029,16 +905,16 @@ namespace xlsx_reader{
 			return true;
 		}
 			
-        default:
-            return false;
-        }
+		default:
+			return false;
+		}
 	}
-	bool operator!=(const extend_node_value& cur, const extend_node_value& other)
+	bool operator!=(const typed_value& cur, const typed_value& other)
 	{
 		return !(cur == other);
 	}
 
-	size_t extend_node_value_hash::operator()(const extend_node_value* s) const
+	size_t typed_value_hash::operator()(const typed_value* s) const
 	{
 		if (!s)
 		{
@@ -1047,27 +923,25 @@ namespace xlsx_reader{
 		switch(s->type_desc->_type)
 		{
 		case basic_node_type_descriptor::comment:
-        case basic_node_type_descriptor::string:
-            return std::hash<std::string_view>()(s->v_text);
-        case basic_node_type_descriptor::date:
-        case basic_node_type_descriptor::datetime:
-        case basic_node_type_descriptor::number_double:
+		case basic_node_type_descriptor::string:
+			return std::hash<std::string_view>()(s->v_text);
+		case basic_node_type_descriptor::number_double:
 			return std::hash<double>()(s->v_double);
-        case basic_node_type_descriptor::number_32:
+		case basic_node_type_descriptor::number_32:
 			return std::hash<std::int32_t>()(s->v_int32);
-        case basic_node_type_descriptor::number_u32:
-            return std::hash<std::uint32_t>()(s->v_uint32);
-        case basic_node_type_descriptor::number_64:
-            return std::hash<std::int64_t>()(s->v_int64);
-        case basic_node_type_descriptor::number_u64:
-            return std::hash<std::uint64_t>()(s->v_uint64);
-        case basic_node_type_descriptor::number_bool:
-            return std::hash<bool>()(s->v_bool);
-        case basic_node_type_descriptor::number_float:
+		case basic_node_type_descriptor::number_u32:
+			return std::hash<std::uint32_t>()(s->v_uint32);
+		case basic_node_type_descriptor::number_64:
+			return std::hash<std::int64_t>()(s->v_int64);
+		case basic_node_type_descriptor::number_u64:
+			return std::hash<std::uint64_t>()(s->v_uint64);
+		case basic_node_type_descriptor::number_bool:
+			return std::hash<bool>()(s->v_bool);
+		case basic_node_type_descriptor::number_float:
 			return std::hash<float>()(s->v_float);
-        case basic_node_type_descriptor::list:
-        case basic_node_type_descriptor::tuple:
-        case basic_node_type_descriptor::ref_id:
+		case basic_node_type_descriptor::list:
+		case basic_node_type_descriptor::tuple:
+		case basic_node_type_descriptor::ref_id:
 		{
 			auto cur_size = s->v_list.size();
 			std::size_t result_hash = 0;
@@ -1078,11 +952,11 @@ namespace xlsx_reader{
 			return result_hash;
 		}
 			
-        default:
-            return 0;
-        }
+		default:
+			return 0;
+		}
 	}
-	bool extend_node_value_ptr_equal::operator()(const extend_node_value* from, const extend_node_value* to) const
+	bool typed_value_ptr_equal::operator()(const typed_value* from, const typed_value* to) const
 	{
 		if(from == to)
 		{
@@ -1094,95 +968,85 @@ namespace xlsx_reader{
 		}
 		return (*from == *to);
 	}
-   typed_cell* extend_node_value_constructor::parse_node(const extend_node_type_descriptor* type_desc, const cell* in_cell_value)
-    {
-        if(!in_cell_value)
-        {
-            return nullptr;
-        }
-        switch(type_desc->_type)
-        {
-        case basic_node_type_descriptor::comment:
-        case basic_node_type_descriptor::string:
-            if(in_cell_value->_type != cell_type::inline_string && in_cell_value->_type != cell_type::shared_string)
-            {
-                return nullptr;
-            }
-            return new typed_cell(in_cell_value->_row, in_cell_value->_column, new extend_node_value(in_cell_value->expect_value<string_view>()));
-        case basic_node_type_descriptor::date:
-        case basic_node_type_descriptor::datetime:
-        case basic_node_type_descriptor::number_double:
-            if(in_cell_value->_type != cell_type::number_double)
-            {
-                return nullptr;
-            }
-            return new typed_cell(in_cell_value->_row, in_cell_value->_column,new extend_node_value(in_cell_value->expect_value<double>()));
-        case basic_node_type_descriptor::number_32:
-            if(in_cell_value->_type != cell_type::number_double)
-            {
-                return nullptr;
-            }
-            return new typed_cell(in_cell_value->_row, in_cell_value->_column, new extend_node_value(in_cell_value->expect_value<int>()));
-        case basic_node_type_descriptor::number_u32:
-            if(in_cell_value->_type != cell_type::number_double)
-            {
-                return nullptr;
-            }
-            return new typed_cell(in_cell_value->_row, in_cell_value->_column,new extend_node_value(in_cell_value->expect_value<uint32_t>()));
-        case basic_node_type_descriptor::number_64:
-            if(in_cell_value->_type != cell_type::number_double)
-            {
-                return nullptr;
-            }
-            return new typed_cell(in_cell_value->_row, in_cell_value->_column,new extend_node_value(in_cell_value->expect_value<int64_t>()));
-        case basic_node_type_descriptor::number_u64:
-            if(in_cell_value->_type != cell_type::number_double)
-            {
-                return nullptr;
-            }
-            return new typed_cell(in_cell_value->_row, in_cell_value->_column,new extend_node_value(in_cell_value->expect_value<uint64_t>()));
-        case basic_node_type_descriptor::number_bool:
-            if(in_cell_value->_type != cell_type::number_bool)
-            {
-                return nullptr;
-            }
-            return new typed_cell(in_cell_value->_row, in_cell_value->_column,new extend_node_value(in_cell_value->expect_value<bool>()));
-        case basic_node_type_descriptor::number_float:
-            if(in_cell_value->_type != cell_type::number_double)
-            {
-                return nullptr;
-            }
-            return new typed_cell(in_cell_value->_row, in_cell_value->_column,new extend_node_value(in_cell_value->expect_value<float>()));
-        case basic_node_type_descriptor::list:
-        case basic_node_type_descriptor::tuple:
-        case basic_node_type_descriptor::ref_id:
-            if(in_cell_value->_type != cell_type::inline_string && in_cell_value->_type != cell_type::shared_string)
-            {
-                return nullptr;
-            }
-            return new typed_cell(in_cell_value->_row, in_cell_value->_column,extend_node_value_constructor::parse_value_with_type(type_desc, in_cell_value->expect_value<string_view>()));
-        default:
-            return nullptr;
-        }
-    }
-	extend_node_value::~extend_node_value()
+   typed_cell* typed_node_value_constructor::parse_node(const typed_node_type_descriptor* type_desc, const cell* in_cell_value)
+	{
+		if(!in_cell_value)
+		{
+			return nullptr;
+		}
+		switch(type_desc->_type)
+		{
+		case basic_node_type_descriptor::comment:
+		case basic_node_type_descriptor::string:
+		{
+			auto result_opt = in_cell_value->expect_value<string_view>();
+			if (!result_opt)
+			{
+				return nullptr;
+			}
+			else
+			{
+				return new typed_cell(in_cell_value->_row, in_cell_value->_column, new typed_value(result_opt.value()));
+			}
+		}
+		case basic_node_type_descriptor::number_double:
+			return prase_node_with_number<double>(type_desc, in_cell_value);
+		case basic_node_type_descriptor::number_32:
+			return prase_node_with_number<int>(type_desc, in_cell_value);
+		case basic_node_type_descriptor::number_u32:
+			return prase_node_with_number<uint32_t>(type_desc, in_cell_value);
+		case basic_node_type_descriptor::number_64:
+			return prase_node_with_number<int64_t>(type_desc, in_cell_value);
+		case basic_node_type_descriptor::number_u64:
+			return prase_node_with_number<uint64_t>(type_desc, in_cell_value);
+		case basic_node_type_descriptor::number_bool:
+		{
+			auto result_opt = in_cell_value->expect_value<bool>();
+			if (!result_opt)
+			{
+				return nullptr;
+			}
+			else
+			{
+				return new typed_cell(in_cell_value->_row, in_cell_value->_column, new typed_value(result_opt.value()));
+			}
+		}
+		case basic_node_type_descriptor::number_float:
+			return prase_node_with_number<float>(type_desc, in_cell_value);
+		case basic_node_type_descriptor::list:
+		case basic_node_type_descriptor::tuple:
+		case basic_node_type_descriptor::ref_id:
+		{
+			auto result_opt = in_cell_value->expect_value<string_view>();
+			if (!result_opt)
+			{
+				return nullptr;
+			}
+			return new typed_cell(in_cell_value->_row, in_cell_value->_column, typed_node_value_constructor::parse_value_with_type(type_desc, result_opt.value()));
+		}
+			
+		default:
+			return nullptr;
+		}
+	}
+	typed_value::~typed_value()
 	{
 		for(auto i: v_list)
 		{
 			if(i)
 			{
-				i->~extend_node_value();
+				i->~typed_value();
 			}
 		}
 		v_list.clear();
 	}
-	const typed_cell* extend_node_value_constructor::match_node(const cell* in_cell_value)
+	const typed_cell* typed_node_value_constructor::match_node(const cell* in_cell_value)
 	{
-		return extend_node_value_constructor::parse_node(type_desc, in_cell_value);
+		return typed_node_value_constructor::parse_node(type_desc, in_cell_value);
 	} 
 	
 	template <>
-	optional<std::uint32_t> extend_node_value::expect_simple_value<uint32_t>() const
+	optional<std::uint32_t> typed_value::expect_simple_value<uint32_t>() const
 	{
 		if(type_desc->_type != basic_node_type_descriptor::number_u32)
 		{
@@ -1195,7 +1059,7 @@ namespace xlsx_reader{
 	}
 
 	template <>
-	optional<std::int32_t> extend_node_value::expect_simple_value<int32_t>() const
+	optional<std::int32_t> typed_value::expect_simple_value<int32_t>() const
 	{
 		if(type_desc->_type != basic_node_type_descriptor::number_32)
 		{
@@ -1208,7 +1072,7 @@ namespace xlsx_reader{
 	}
 
 	template <>
-	optional<std::int64_t> extend_node_value::expect_simple_value<int64_t>() const
+	optional<std::int64_t> typed_value::expect_simple_value<int64_t>() const
 	{
 		if(type_desc->_type != basic_node_type_descriptor::number_64)
 		{
@@ -1220,7 +1084,7 @@ namespace xlsx_reader{
 		}
 	}
 	template <>
-	optional<std::uint64_t> extend_node_value::expect_simple_value<uint64_t>() const
+	optional<std::uint64_t> typed_value::expect_simple_value<uint64_t>() const
 	{
 		if(type_desc->_type != basic_node_type_descriptor::number_u64)
 		{
@@ -1232,7 +1096,7 @@ namespace xlsx_reader{
 		}
 	}
 	template <>
-	optional<bool> extend_node_value::expect_simple_value<bool>() const
+	optional<bool> typed_value::expect_simple_value<bool>() const
 	{
 		if(type_desc->_type != basic_node_type_descriptor::number_bool)
 		{
@@ -1245,7 +1109,7 @@ namespace xlsx_reader{
 	}
 
 	template <>
-	optional<float> extend_node_value::expect_simple_value<float>() const
+	optional<float> typed_value::expect_simple_value<float>() const
 	{
 		if(type_desc->_type != basic_node_type_descriptor::number_float)
 		{
@@ -1253,11 +1117,11 @@ namespace xlsx_reader{
 		}
 		else
 		{
-			return v_bool;
+			return v_float;
 		}
 	}
 	template <>
-	optional<double> extend_node_value::expect_simple_value<double>() const
+	optional<double> typed_value::expect_simple_value<double>() const
 	{
 		if(type_desc->_type != basic_node_type_descriptor::number_double)
 		{
@@ -1269,7 +1133,7 @@ namespace xlsx_reader{
 		}
 	}
 	template <>
-	optional<string_view> extend_node_value::expect_simple_value<string_view>() const
+	optional<string_view> typed_value::expect_simple_value<string_view>() const
 	{
 
 		if(v_text.empty())

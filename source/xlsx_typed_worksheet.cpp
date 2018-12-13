@@ -1,4 +1,4 @@
-﻿#include <xlsx_typed.h>
+﻿#include <xlsx_typed_worksheet.h>
 #include <iostream>
 namespace {
 	using namespace xlsx_reader;
@@ -7,7 +7,7 @@ namespace {
 }
 namespace xlsx_reader{
 	using namespace std;
-	typed_header::typed_header(const extend_node_type_descriptor* in_type_desc, string_view in_header_name, string_view in_header_comment):type_desc(in_type_desc), header_name(in_header_name), header_comment(in_header_comment)
+	typed_header::typed_header(const typed_node_type_descriptor* in_type_desc, string_view in_header_name, string_view in_header_comment):type_desc(in_type_desc), header_name(in_header_name), header_comment(in_header_comment)
 	{
 
 	}
@@ -35,29 +35,26 @@ namespace xlsx_reader{
 				cerr<<"empty header name at idx "<<i.first<<endl;
 				return false;
 			}
-			if(cur_cell_value->_type != cell_type::shared_string && cur_cell_value->_type != cell_type::inline_string)
+			auto cur_header_name_opt = cur_cell_value->expect_value<string_view>();
+			if (!cur_header_name_opt)
 			{
-				cerr<<"invalid value "<<*cur_cell_value<<" for header name at column "<<i.first<<endl;
+				cerr << "empty header name at idx " << i.first << endl;
 				return false;
 			}
-			auto cur_header_name = cur_cell_value->expect_value<string_view>();
+			auto cur_header_name = cur_header_name_opt.value();
 			cur_cell_value = get_cell(2, column_idx);
 			if(!cur_cell_value)
 			{
 				cerr<<"empty cell type value for header "<< cur_header_name<<endl;
 				return false;
 			}
-			if(cur_cell_value->_type != cell_type::shared_string && cur_cell_value->_type != cell_type::inline_string)
+			auto cur_type_opt = cur_cell_value->expect_value<string_view>();
+			if (!cur_type_opt)
 			{
-				cerr<<"invalid value "<<*cur_cell_value<<" for header type at column "<<i.first<<endl;
-				return false;
+				cerr <<"invalid type desc "<<cur_cell_value->_text<<" for header type at column " << i.first << endl;
 			}
-			auto cur_type_desc = extend_node_value_constructor::parse_type(cur_cell_value->expect_value<string_view>());
-			if(!cur_type_desc)
-			{
-				cerr<<"invalid type desc "<<cur_cell_value->expect_value<string_view>()<<"for header type at column "<<i.first<<endl;
-				return false;
-			}
+			auto cur_type_desc = typed_node_value_constructor::parse_type(cur_type_opt.value());
+
 			if (column_idx == 1)
 			{
 				// expect int or str in first column
@@ -66,8 +63,6 @@ namespace xlsx_reader{
 				case basic_node_type_descriptor::number_bool:
 				case basic_node_type_descriptor::number_float:
 				case basic_node_type_descriptor::number_double:
-				case basic_node_type_descriptor::date:
-				case basic_node_type_descriptor::datetime:
 				case basic_node_type_descriptor::comment:
 				case basic_node_type_descriptor::list:
 				case basic_node_type_descriptor::tuple:
@@ -81,7 +76,8 @@ namespace xlsx_reader{
 			cur_cell_value = get_cell(3, column_idx);
 			if(cur_cell_value)
 			{
-				header_comment = cur_cell_value->expect_value<string_view>();
+				header_comment = cur_cell_value->_text;
+
 			}
 			typed_headers.push_back(new typed_header(cur_type_desc, cur_header_name, header_comment));
 			column_idx += 1;
@@ -109,7 +105,7 @@ namespace xlsx_reader{
 				{
 					continue;
 				}
-				auto cur_typed_cell = extend_node_value_constructor::parse_node(typed_headers[j.first - 1]->type_desc, j.second);
+				auto cur_typed_cell = typed_node_value_constructor::parse_node(typed_headers[j.first - 1]->type_desc, j.second);
 				if(!cur_typed_cell)
 				{
 					continue;
@@ -155,7 +151,7 @@ namespace xlsx_reader{
 		}
 		return 0;
 	}
-	optional<uint32_t> typed_worksheet::get_indexed_row(const extend_node_value* first_row_value) const
+	optional<uint32_t> typed_worksheet::get_indexed_row(const typed_value* first_row_value) const
 	{
 		auto iter = _indexes.find(first_row_value);
 		if(iter == _indexes.end())
@@ -167,7 +163,7 @@ namespace xlsx_reader{
 			return iter->second;
 		}
 	}
-	optional<reference_wrapper<const map<uint32_t, const typed_cell*>>> typed_worksheet::get_ref_row(string_view sheet_name, const extend_node_value*  first_row_value) const
+	optional<reference_wrapper<const map<uint32_t, const typed_cell*>>> typed_worksheet::get_ref_row(string_view sheet_name, const typed_value*  first_row_value) const
 	{
 		auto current_workbook = get_workbook();
 		if(! current_workbook)

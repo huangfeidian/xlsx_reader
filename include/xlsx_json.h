@@ -2,10 +2,10 @@
 #include <nlohmann/json.hpp>
 #include <unordered_map>
 #include "xlsx_cell.h"
-#include "xlsx_cell_extend.h"
+#include "xlsx_typed_cell.h"
 #include "xlsx_workbook.h"
 #include "xlsx_worksheet.h"
-#include "xlsx_typed.h"
+#include "xlsx_typed_worksheet.h"
 namespace xlsx_reader
 {
 	using json = nlohmann::json;
@@ -83,13 +83,10 @@ namespace xlsx_reader
 		j = new_j;
 		return;
 	}
-	void to_json(json& j, const extend_node_type_descriptor& cur_type)
+	void to_json(json& j, const typed_node_type_descriptor& cur_type)
 	{
 		static unordered_map<basic_node_type_descriptor, string_view> type_to_string = {
 			{basic_node_type_descriptor::comment, "comment"},
-			{basic_node_type_descriptor::date, "date"},
-			{basic_node_type_descriptor::time, "time"},
-			{basic_node_type_descriptor::datetime, "datetime"},
 			{basic_node_type_descriptor::string, "string"},
 			{basic_node_type_descriptor::number_bool, "bool"},
 			{basic_node_type_descriptor::number_u32, "uint32"},
@@ -110,7 +107,7 @@ namespace xlsx_reader
 		{
 		case basic_node_type_descriptor::list:
 			{
-				auto temp_detail = std::get<extend_node_type_descriptor::list_detail_t>(cur_type._type_detail);
+				auto temp_detail = std::get<typed_node_type_descriptor::list_detail_t>(cur_type._type_detail);
 				json result_json;
 				string sep_string = ",";
 				sep_string[0] = std::get<2>(temp_detail);
@@ -120,7 +117,7 @@ namespace xlsx_reader
 			}
 		case basic_node_type_descriptor::tuple:
 			{
-				auto temp_detail = std::get<extend_node_type_descriptor::tuple_detail_t>(cur_type._type_detail);
+				auto temp_detail = std::get<typed_node_type_descriptor::tuple_detail_t>(cur_type._type_detail);
 				json result_json;
 				json type_detail = json::array();
 				for (const auto& i : temp_detail.first)
@@ -135,7 +132,7 @@ namespace xlsx_reader
 			}
 		case basic_node_type_descriptor::ref_id:
 			{
-				auto temp_detail = std::get<extend_node_type_descriptor::ref_detail_t>(cur_type._type_detail);
+				auto temp_detail = std::get<typed_node_type_descriptor::ref_detail_t>(cur_type._type_detail);
 				string_view cur_workbook, cur_worksheet, cur_ref_type;
 				if(!cur_workbook.empty())
 				{
@@ -158,7 +155,7 @@ namespace xlsx_reader
 		}
 		return;
 	}
-	void to_json(json& j, const extend_node_value& cur_value)
+	void to_json(json& j, const typed_value& cur_value)
 	{
 		if (!cur_value.type_desc)
 		{
@@ -169,12 +166,6 @@ namespace xlsx_reader
 		{
 		case basic_node_type_descriptor::comment:
 			j = cur_value.v_text;
-			return;
-		case basic_node_type_descriptor::date:
-			j = date::from_number(cur_value.v_int32, calendar::windows_1900).to_string();
-			return;
-		case basic_node_type_descriptor::time:
-			j = time::from_number(cur_value.v_double).to_string();
 			return;
 		case basic_node_type_descriptor::number_bool:
 			j = cur_value.v_bool;

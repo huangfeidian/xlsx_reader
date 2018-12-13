@@ -34,7 +34,7 @@ INCLUDE_DIRECTORIES(${XLSX_READER_HEADER_DIR})
 ADD_LIBRARY(xlsx_reader STATIC ${XLSX_READER_SRC_LIST})
 target_link_libraries(xlsx_reader miniz tinyxml2)
 
-ADD_EXECUTABLE(cell_test ${XLSX_READER_TEST_DIR}/cell_extend_test.cpp)
+ADD_EXECUTABLE(cell_test ${XLSX_READER_TEST_DIR}/typed_cell_test.cpp)
 ADD_EXECUTABLE(workbook_test ${XLSX_READER_TEST_DIR}/workbook_test.cpp)
 
 target_link_libraries(cell_test xlsx_reader)

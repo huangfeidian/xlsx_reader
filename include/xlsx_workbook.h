@@ -101,60 +101,15 @@ namespace xlsx_reader
 				while(cell_node)
 				{
 					uint32_t col_idx = row_column_tuple_from_string(cell_node->Attribute("r")).second;
-					auto cur_cell = cell(row_index, col_idx);
-					auto current_value = cell_node->FirstChildElement("v")->GetText();
+					
+					auto current_value = string_view(cell_node->FirstChildElement("v")->GetText());
 					auto type_attr = cell_node->Attribute("t");
-					if(type_attr)
+					if(type_attr && string(type_attr) == "s")
 					{
-						auto type_attr_v = string(type_attr);
-						if(type_attr_v == "s")
-						{
-							// shared str
-							cur_cell.set_value(shared_string[stoi(current_value)]);
-						}
-						else if(type_attr_v == "str")
-						{
-							// simple_str
-							cur_cell.set_value(current_value);
-						}
-						else if(type_attr_v == "b")
-						{
-							// BOOL
-							auto bool_value = stoi(current_value) == 1;
-							cur_cell.set_value(bool_value);
-						}
-						else if(type_attr_v == "n")
-						{
-							//numeric
-							auto double_value = stod(current_value);
-							cur_cell.set_value(double_value);
-						}
-						else if(type_attr_v == "inlineStr")
-						{
-							// simple_str
-							cur_cell.set_value(current_value);
-						}
-						else if(type_attr_v == "e")
-						{
-							// error
-							cur_cell.from_error(current_value);
-						}
-						else
-						{
-							// simple_str
-							cur_cell.set_value(current_value);
-						}
+						current_value = shared_string[stoi(string(current_value))];
 					}
-					else
-					{
-						//numeric
-						// but we dont cast it 
-						// auto double_value = stod(current_value);
-						cur_cell.set_value(string_view(current_value));
-					}
-
 					cell_node = cell_node->NextSiblingElement("c");
-					result.push_back(cur_cell);
+					result.emplace_back(row_index, col_idx, current_value);
 
 				}
 				row_node = row_node->NextSiblingElement("row");

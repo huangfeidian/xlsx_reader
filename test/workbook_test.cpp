@@ -1,5 +1,5 @@
 ﻿#include <xlsx_workbook.h>
-#include <xlsx_typed.h>
+#include <xlsx_typed_worksheet.h>
 #include <iostream>
 #include <fstream>
 #include <iomanip>
