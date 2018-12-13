@@ -45,7 +45,7 @@ namespace xlsx_reader{
 				cerr<<"invalid value "<<*cur_cell_value<<" for header name at column "<<i.first<<endl;
 				return false;
 			}
-			auto cur_header_name = cur_cell_value->get_value<string_view>();
+			auto cur_header_name = cur_cell_value->expect_value<string_view>();
 			cur_cell_value = get_cell(2, column_idx);
 			if(!cur_cell_value)
 			{
@@ -57,10 +57,10 @@ namespace xlsx_reader{
 				cerr<<"invalid value "<<*cur_cell_value<<" for header type at column "<<i.first<<endl;
 				return false;
 			}
-			auto cur_type_desc = extend_node_value_constructor::parse_type(cur_cell_value->get_value<string_view>());
+			auto cur_type_desc = extend_node_value_constructor::parse_type(cur_cell_value->expect_value<string_view>());
 			if(!cur_type_desc)
 			{
-				cerr<<"invalid type desc "<<cur_cell_value->get_value<string_view>()<<"for header type at column "<<i.first<<endl;
+				cerr<<"invalid type desc "<<cur_cell_value->expect_value<string_view>()<<"for header type at column "<<i.first<<endl;
 				return false;
 			}
 			if (column_idx == 1)
@@ -86,9 +86,9 @@ namespace xlsx_reader{
 			cur_cell_value = get_cell(3, column_idx);
 			if(cur_cell_value)
 			{
-				header_comment = cur_cell_value->get_value<string_view>();
+				header_comment = cur_cell_value->expect_value<string_view>();
 			}
-			typed_headers.emplace_back(cur_type_desc, cur_header_name, header_comment);
+			typed_headers.push_back(new typed_header(cur_type_desc, cur_header_name, header_comment));
 			column_idx += 1;
 		}
 		return true;
@@ -114,7 +114,7 @@ namespace xlsx_reader{
 				{
 					continue;
 				}
-				auto cur_typed_cell = extend_node_value_constructor::parse_node(typed_headers[j.first - 1].type_desc, j.second);
+				auto cur_typed_cell = extend_node_value_constructor::parse_node(typed_headers[j.first - 1]->type_desc, j.second);
 				if(!cur_typed_cell)
 				{
 					continue;
@@ -144,7 +144,12 @@ namespace xlsx_reader{
 	void to_json(json& j, const typed_worksheet& cur_worksheet)
 	{
 		json new_j;
-		new_j["headers"] = json(cur_worksheet.typed_headers);
+		json header_array = json::array();
+		for (const auto& i : cur_worksheet.typed_headers)
+		{
+			header_array.push_back(json(*i));
+		}
+		new_j["headers"] = header_array;
 		new_j["sheet_id"] = cur_worksheet._sheet_id;
 		new_j["sheet_name"] = cur_worksheet._name;
 		json row_matrix;
@@ -155,7 +160,7 @@ namespace xlsx_reader{
 			json row_j = json::object();
 			for(const auto& column_info: row_info.second)
 			{
-				row_j[std::string((cur_worksheet.typed_headers[column_info.first - 1]).header_name)] = json(*column_info.second->cur_typed_value);
+				row_j[std::string((cur_worksheet.typed_headers[column_info.first - 1])->header_name)] = json(*column_info.second->cur_typed_value);
 			}
 			row_matrix[to_string(cur_row_index)] = row_j;
 		}
@@ -167,7 +172,7 @@ namespace xlsx_reader{
 	{
 
 	}
-	const vector<typed_header>& typed_worksheet::get_typed_headers()
+	const vector<const typed_header*>& typed_worksheet::get_typed_headers() const
 	{
 		return typed_headers;
 	}
@@ -175,7 +180,7 @@ namespace xlsx_reader{
 	{
 		for (int i = 0; i < typed_headers.size(); i++)
 		{
-			if (typed_headers[i].header_name == header_name)
+			if (typed_headers[i]->header_name == header_name)
 			{
 				return i + 1;
 			}
@@ -222,20 +227,33 @@ namespace xlsx_reader{
 	{
 		return typed_row_info;
 	}
-	bool typed_worksheet::check_header_match(const unordered_map<string_view, typed_header>& other_headers, string_view index_column_name, const vector<string_view>& int_ref_headers, const vector<string_view>& string_ref_headers) const
+	bool typed_worksheet::check_header_match(const unordered_map<string_view, const typed_header*>& other_headers, string_view index_column_name, const vector<string_view>& int_ref_headers, const vector<string_view>& string_ref_headers) const
 	{
-		if(typed_headers[0].header_name != index_column_name)
+		if(typed_headers[0]->header_name != index_column_name)
 		{
 			return false;
 		}
 		for(const auto& i : other_headers)
 		{
-			auto header_idx = get_header_idx(i.second.header_name);
-			if(header_idx == std::numeric_limits<uint32_t>::max())
+			if (!i.second)
 			{
 				return false;
 			}
-			if(!(typed_headers[header_idx] == i.second))
+			auto header_idx = get_header_idx(i.second->header_name);
+			if(header_idx == 0)
+			{
+				return false;
+			}
+			header_idx--;
+			if (header_idx >= typed_headers.size())
+			{
+				return false;
+			}
+			if (!typed_headers[header_idx])
+			{
+				return false;
+			}
+			if(!(*typed_headers[header_idx] == *i.second))
 			{
 				return false;
 			}
@@ -244,20 +262,21 @@ namespace xlsx_reader{
 		for(auto inf_ref_name: int_ref_headers)
 		{
 			auto header_idx = get_header_idx(inf_ref_name);
-			if(header_idx == std::numeric_limits<uint32_t>::max())
+			if(header_idx == 0)
 			{
 				return false;
 			}
 			auto cur_header = typed_headers[header_idx];
-			if(!cur_header.type_desc)
+
+			if(!cur_header ||!cur_header->type_desc)
 			{
 				return false;
 			}
-			if(cur_header.type_desc->_type != basic_node_type_descriptor::ref_id)
+			if(cur_header->type_desc->_type != basic_node_type_descriptor::ref_id)
 			{
 				return false;
 			}
-			auto ref_detail = cur_header.type_desc->get_ref_detail_t();
+			auto ref_detail = cur_header->type_desc->get_ref_detail_t();
 			if(!ref_detail)
 			{
 				return false;
@@ -275,15 +294,15 @@ namespace xlsx_reader{
 				return false;
 			}
 			auto cur_header = typed_headers[header_idx];
-			if(!cur_header.type_desc)
+			if(!cur_header || !cur_header->type_desc)
 			{
 				return false;
 			}
-			if(cur_header.type_desc->_type != basic_node_type_descriptor::ref_id)
+			if(cur_header->type_desc->_type != basic_node_type_descriptor::ref_id)
 			{
 				return false;
 			}
-			auto ref_detail = cur_header.type_desc->get_ref_detail_t();
+			auto ref_detail = cur_header->type_desc->get_ref_detail_t();
 			if(!ref_detail)
 			{
 				return false;

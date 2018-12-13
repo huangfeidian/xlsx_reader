@@ -141,6 +141,10 @@ namespace xlsx_reader
 		}
 		archive_file_buffers.clear();
 	}
+	bool archive::is_valid() const
+	{
+		return valid_flag;
+	}
 	archive::~archive()
 	{
 		clear_resource();

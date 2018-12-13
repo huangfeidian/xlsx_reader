@@ -1,7 +1,7 @@
 ﻿#pragma once
-#include <xlsx_cell_extend.h>
-#include <xlsx_worksheet.h>
-#include <xlsx_workbook.h>
+#include "xlsx_cell_extend.h"
+#include "xlsx_worksheet.h"
+#include "xlsx_workbook.h"
 #include <nlohmann/json.hpp>
 #include <functional>
 #include <unordered_map>
@@ -31,7 +31,7 @@ namespace xlsx_reader{
 		template <typename T> friend class workbook;
 		virtual ~typed_worksheet();
 		// 获取所有的表头数据
-		const std::vector<typed_header>& get_typed_headers() const;
+		const std::vector<const typed_header*>& get_typed_headers() const;
 		const workbook<typed_worksheet>* get_workbook() const;
 		// 根据表头名字返回列号 如果不存在则返回0
 		std::uint32_t get_header_idx(std::string_view header_name) const;
@@ -41,9 +41,9 @@ namespace xlsx_reader{
 
 		const std::map<std::uint32_t, std::map<std::uint32_t, const typed_cell*>>& get_all_typed_row_info() const;
 
-		bool check_header_match(const std::unordered_map<std::string_view, typed_header>& other_headers, std::string_view index_column_name, const std::vector<std::string_view>& int_ref_headers, const std::vector<std::string_view>& string_ref_headers) const;
+		bool check_header_match(const std::unordered_map<std::string_view, const typed_header*>& other_headers, std::string_view index_column_name, const std::vector<std::string_view>& int_ref_headers, const std::vector<std::string_view>& string_ref_headers) const;
 	protected:
-		std::vector<typed_header> typed_headers;
+		std::vector<const typed_header*> typed_headers;
 		std::map<std::uint32_t, std::map<std::uint32_t, const typed_cell*>> typed_row_info;
 		std::vector<typed_cell> typed_cells;
 		std::unordered_map<const extend_node_value*, std::uint32_t, extend_node_value_hash, extend_node_value_ptr_equal> _indexes;

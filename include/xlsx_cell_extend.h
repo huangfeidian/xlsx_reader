@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <xlsx_cell.h>
+#include "xlsx_cell.h"
 #include <string_view>
 #include <cstdint>
 #include <optional>
@@ -10,6 +10,15 @@
 
 namespace xlsx_reader
 {
+	template<typename T>
+	struct is_tuple_impl : std::false_type {};
+
+	template<typename... Ts>
+	struct is_tuple_impl<std::tuple<Ts...>> : std::true_type {};
+
+	template<typename T>
+	struct is_tuple : is_tuple_impl<std::decay_t<T>> {};
+
 	using json = nlohmann::json;
 	class cell_type_converter
 	{
@@ -89,28 +98,88 @@ namespace xlsx_reader
 		friend void to_json(json& j, const extend_node_value& cur_extend_node_value);
 		friend bool operator==(const extend_node_value& cur, const extend_node_value& other);
 		friend bool operator!=(const extend_node_value& cur, const extend_node_value& other);
+		template <typename T> 
+		std::optional<T> expect_simple_value() const;
 		template <typename T>
-		std::optional<T> get_value() const;
+		std::optional<T> expect_value() const;
 		template <typename... args>
-		std::optional<std::tuple<args...>> get_value() const;
+		std::optional<std::tuple<args ...>> expect_tuple_value() const;
 		~extend_node_value();
+	private:
+		template<typename T> struct deduce_type{};
+		template <typename T>
+		auto expect_value_dispatch(deduce_type<T>) const
+		{
+			return expect_simple_value<T>();
+		}
+		template <typename... args>
+		auto expect_value_dispatch(deduce_type<std::tuple<args...>>) const
+		{
+			return expect_tuple_value<args...>();
+		}
 	};
+
 	template <>
-	std::optional<std::uint32_t> extend_node_value::get_value<std::uint32_t>() const;
+	std::optional<std::uint32_t> extend_node_value::expect_simple_value<std::uint32_t>() const;
 	template <>
-	std::optional<std::int32_t> extend_node_value::get_value<std::int32_t>() const;
+	std::optional<std::int32_t> extend_node_value::expect_simple_value<std::int32_t>() const;
 	template <>
-	std::optional<std::int64_t> extend_node_value::get_value<std::int64_t>() const;
+	std::optional<std::int64_t> extend_node_value::expect_simple_value<std::int64_t>() const;
 	template <>
-	std::optional<std::uint64_t> extend_node_value::get_value<std::uint64_t>() const;
+	std::optional<std::uint64_t> extend_node_value::expect_simple_value<std::uint64_t>() const;
 	template <>
-	std::optional<float> extend_node_value::get_value<float>() const;
+	std::optional<float> extend_node_value::expect_simple_value<float>() const;
 	template <>
-	std::optional<double> extend_node_value::get_value<double>() const;
+	std::optional<double> extend_node_value::expect_simple_value<double>() const;
 	template <>
-	std::optional<bool> extend_node_value::get_value<bool>() const;
+	std::optional<bool> extend_node_value::expect_simple_value<bool>() const;
 	template <>
-	std::optional<std::string_view> extend_node_value::get_value<std::string_view>() const;
+	std::optional<std::string_view> extend_node_value::expect_simple_value<std::string_view>() const;
+
+	template<typename... args, size_t... arg_idx>
+	std::optional<std::tuple<args...>> get_tuple_value_from_vector(const std::vector<extend_node_value*>& v_list, std::index_sequence<arg_idx...>)
+	{
+		if(!(v_list[arg_idx] &&...))
+		{
+			return std::nullopt;
+		}
+		auto temp_result = std::make_tuple((*v_list[arg_idx]).expect_value<args>()...);
+
+		if(!(std::get<arg_idx>(temp_result) &&...))
+		{
+			return std::nullopt;
+		}
+		return std::make_tuple(std::get<arg_idx>(temp_result).value()...);
+
+	}
+
+	template<typename... args>
+	std::optional<std::tuple<args...>> extend_node_value::expect_tuple_value() const
+	{
+		if(v_list.size() == 0)
+		{
+			return std::nullopt;
+		}
+		for(const auto i: v_list)
+		{
+			if(!i)
+			{
+				return std::nullopt;
+			}
+		}
+		auto the_tuple_size = sizeof...(args);
+		if(v_list.size() != the_tuple_size)
+		{
+			return std::nullopt;
+		}
+		return get_tuple_value_from_vector<args...>(v_list, std::index_sequence_for<args...>{});
+
+	}
+	template <typename T>
+	std::optional<T> extend_node_value::expect_value() const
+	{
+		return expect_value_dispatch(deduce_type<T>());
+	}
 
 	struct extend_node_value_hash
 	{
@@ -134,6 +203,18 @@ namespace xlsx_reader
 		template <typename T> 
 		std::optional<T> expect_value() const;
 	};
+	template <typename T>
+	std::optional<T> typed_cell::expect_value() const
+	{
+		if(!cur_typed_value)
+		{
+			return std::nullopt;
+		}
+		else
+		{
+			return cur_typed_value->expect_value<T>();
+		}
+	}
 	class extend_node_value_constructor
 	{
 	public:

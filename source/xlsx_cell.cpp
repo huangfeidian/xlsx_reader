@@ -107,42 +107,42 @@ namespace xlsx_reader
 		return *this;
 	}
 	template<>
-	bool cell::get_value<bool>() const
+	bool cell::expect_value<bool>() const
 	{
 		return bool_v;
 	}
 	template<>
-	uint32_t cell::get_value<uint32_t>() const
+	uint32_t cell::expect_value<uint32_t>() const
 	{
 		return int_u32_v;
 	}
 	template<>
-	int32_t cell::get_value<int32_t>() const
+	int32_t cell::expect_value<int32_t>() const
 	{
 		return int_32_v;
 	}
 	template<>
-	uint64_t cell::get_value<uint64_t>() const
+	uint64_t cell::expect_value<uint64_t>() const
 	{
 		return int_u64_v;
 	}
 	template<>
-	int64_t cell::get_value<int64_t>() const
+	int64_t cell::expect_value<int64_t>() const
 	{
 		return int_64_v;
 	}
 	template<>
-	float cell::get_value<float>() const
+	float cell::expect_value<float>() const
 	{
 		return float_v;
 	}
 	template<>
-	double cell::get_value<double>() const
+	double cell::expect_value<double>() const
 	{
 		return double_v;
 	}
 	template<>
-	string_view cell::get_value<string_view>() const
+	string_view cell::expect_value<string_view>() const
 	{
 		return _text;
 	}

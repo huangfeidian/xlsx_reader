@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <string>
-#include <xlsx_types.h>
+#include "xlsx_types.h"
 #include <map>
 
 namespace xlsx_reader

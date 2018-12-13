@@ -1,7 +1,7 @@
 ﻿#pragma once
-#include <xlsx_worksheet.h>
+#include "xlsx_worksheet.h"
 #include <memory>
-#include <xlsx_archive.h>
+#include "xlsx_archive.h"
 #include <optional>
 namespace xlsx_reader
 {
@@ -161,8 +161,9 @@ namespace xlsx_reader
 					else
 					{
 						//numeric
-						auto double_value = stod(current_value);
-						cur_cell.set_value(double_value);
+						// but we dont cast it 
+						// auto double_value = stod(current_value);
+						cur_cell.set_value(string_view(current_value));
 					}
 
 					cell_node = cell_node->NextSiblingElement("c");

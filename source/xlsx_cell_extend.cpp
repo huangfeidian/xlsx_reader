@@ -425,6 +425,14 @@ namespace xlsx_reader{
 				{
 					return new extend_node_value(false);
 				}
+				else if (text == "1"sv)
+				{
+					return new extend_node_value(true);
+				}
+				else if(text == "0"sv)
+				{
+					return new extend_node_value(false);
+				}
 				else
 				{
 					return nullptr;
@@ -1242,7 +1250,7 @@ namespace xlsx_reader{
             {
                 return nullptr;
             }
-            return new typed_cell(in_cell_value->_row, in_cell_value->_column, new extend_node_value(in_cell_value->get_value<string_view>()));
+            return new typed_cell(in_cell_value->_row, in_cell_value->_column, new extend_node_value(in_cell_value->expect_value<string_view>()));
         case basic_node_type_descriptor::date:
         case basic_node_type_descriptor::datetime:
         case basic_node_type_descriptor::number_double:
@@ -1250,43 +1258,43 @@ namespace xlsx_reader{
             {
                 return nullptr;
             }
-            return new typed_cell(in_cell_value->_row, in_cell_value->_column,new extend_node_value(in_cell_value->get_value<double>()));
+            return new typed_cell(in_cell_value->_row, in_cell_value->_column,new extend_node_value(in_cell_value->expect_value<double>()));
         case basic_node_type_descriptor::number_32:
             if(in_cell_value->_type != cell_type::number_double)
             {
                 return nullptr;
             }
-            return new typed_cell(in_cell_value->_row, in_cell_value->_column, new extend_node_value(in_cell_value->get_value<int>()));
+            return new typed_cell(in_cell_value->_row, in_cell_value->_column, new extend_node_value(in_cell_value->expect_value<int>()));
         case basic_node_type_descriptor::number_u32:
             if(in_cell_value->_type != cell_type::number_double)
             {
                 return nullptr;
             }
-            return new typed_cell(in_cell_value->_row, in_cell_value->_column,new extend_node_value(in_cell_value->get_value<uint32_t>()));
+            return new typed_cell(in_cell_value->_row, in_cell_value->_column,new extend_node_value(in_cell_value->expect_value<uint32_t>()));
         case basic_node_type_descriptor::number_64:
             if(in_cell_value->_type != cell_type::number_double)
             {
                 return nullptr;
             }
-            return new typed_cell(in_cell_value->_row, in_cell_value->_column,new extend_node_value(in_cell_value->get_value<int64_t>()));
+            return new typed_cell(in_cell_value->_row, in_cell_value->_column,new extend_node_value(in_cell_value->expect_value<int64_t>()));
         case basic_node_type_descriptor::number_u64:
             if(in_cell_value->_type != cell_type::number_double)
             {
                 return nullptr;
             }
-            return new typed_cell(in_cell_value->_row, in_cell_value->_column,new extend_node_value(in_cell_value->get_value<uint64_t>()));
+            return new typed_cell(in_cell_value->_row, in_cell_value->_column,new extend_node_value(in_cell_value->expect_value<uint64_t>()));
         case basic_node_type_descriptor::number_bool:
             if(in_cell_value->_type != cell_type::number_bool)
             {
                 return nullptr;
             }
-            return new typed_cell(in_cell_value->_row, in_cell_value->_column,new extend_node_value(in_cell_value->get_value<bool>()));
+            return new typed_cell(in_cell_value->_row, in_cell_value->_column,new extend_node_value(in_cell_value->expect_value<bool>()));
         case basic_node_type_descriptor::number_float:
             if(in_cell_value->_type != cell_type::number_double)
             {
                 return nullptr;
             }
-            return new typed_cell(in_cell_value->_row, in_cell_value->_column,new extend_node_value(in_cell_value->get_value<float>()));
+            return new typed_cell(in_cell_value->_row, in_cell_value->_column,new extend_node_value(in_cell_value->expect_value<float>()));
         case basic_node_type_descriptor::list:
         case basic_node_type_descriptor::tuple:
         case basic_node_type_descriptor::ref_id:
@@ -1294,7 +1302,7 @@ namespace xlsx_reader{
             {
                 return nullptr;
             }
-            return new typed_cell(in_cell_value->_row, in_cell_value->_column,extend_node_value_constructor::parse_value_with_type(type_desc, in_cell_value->get_value<string_view>()));
+            return new typed_cell(in_cell_value->_row, in_cell_value->_column,extend_node_value_constructor::parse_value_with_type(type_desc, in_cell_value->expect_value<string_view>()));
         default:
             return nullptr;
         }
@@ -1314,8 +1322,9 @@ namespace xlsx_reader{
 	{
 		return extend_node_value_constructor::parse_node(type_desc, in_cell_value);
 	} 
+	
 	template <>
-	optional<std::uint32_t> extend_node_value::get_value<uint32_t>() const
+	optional<std::uint32_t> extend_node_value::expect_simple_value<uint32_t>() const
 	{
 		if(type_desc->_type != basic_node_type_descriptor::number_u32)
 		{
@@ -1328,7 +1337,7 @@ namespace xlsx_reader{
 	}
 
 	template <>
-	optional<std::int32_t> extend_node_value::get_value<int32_t>() const
+	optional<std::int32_t> extend_node_value::expect_simple_value<int32_t>() const
 	{
 		if(type_desc->_type != basic_node_type_descriptor::number_32)
 		{
@@ -1341,7 +1350,7 @@ namespace xlsx_reader{
 	}
 
 	template <>
-	optional<std::int64_t> extend_node_value::get_value<int64_t>() const
+	optional<std::int64_t> extend_node_value::expect_simple_value<int64_t>() const
 	{
 		if(type_desc->_type != basic_node_type_descriptor::number_64)
 		{
@@ -1353,7 +1362,7 @@ namespace xlsx_reader{
 		}
 	}
 	template <>
-	optional<std::uint64_t> extend_node_value::get_value<uint64_t>() const
+	optional<std::uint64_t> extend_node_value::expect_simple_value<uint64_t>() const
 	{
 		if(type_desc->_type != basic_node_type_descriptor::number_u64)
 		{
@@ -1365,7 +1374,7 @@ namespace xlsx_reader{
 		}
 	}
 	template <>
-	optional<bool> extend_node_value::get_value<bool>() const
+	optional<bool> extend_node_value::expect_simple_value<bool>() const
 	{
 		if(type_desc->_type != basic_node_type_descriptor::number_bool)
 		{
@@ -1378,7 +1387,7 @@ namespace xlsx_reader{
 	}
 
 	template <>
-	optional<float> extend_node_value::get_value<float>() const
+	optional<float> extend_node_value::expect_simple_value<float>() const
 	{
 		if(type_desc->_type != basic_node_type_descriptor::number_float)
 		{
@@ -1390,7 +1399,7 @@ namespace xlsx_reader{
 		}
 	}
 	template <>
-	optional<double> extend_node_value::get_value<double>() const
+	optional<double> extend_node_value::expect_simple_value<double>() const
 	{
 		if(type_desc->_type != basic_node_type_descriptor::number_double)
 		{
@@ -1402,9 +1411,10 @@ namespace xlsx_reader{
 		}
 	}
 	template <>
-	optional<string_view> extend_node_value::get_value<string_view>() const
+	optional<string_view> extend_node_value::expect_simple_value<string_view>() const
 	{
-		if(type_desc->_type != basic_node_type_descriptor::string)
+
+		if(v_text.empty())
 		{
 			return nullopt;
 		}
@@ -1412,48 +1422,5 @@ namespace xlsx_reader{
 		{
 			return v_text;
 		}
-	}
-	template<typename T>
-	optional<T> typed_cell::expect_value() const
-	{
-		if(!cur_typed_value)
-		{
-			return nullopt;
-		}
-		return cur_typed_value->get_value<T>();
-	}
-	template<typename... args>
-	optional<tuple<args...>> extend_node_value::get_value() const
-	{
-		if(v_list.size() == 0)
-		{
-			return nullopt;
-		}
-		for(const auto i: v_list)
-		{
-			if(!i)
-			{
-				return nullopt;
-			}
-		}
-		auto the_tuple_size = sizeof...(args);
-		if(v_list.size() != the_tuple_size)
-		{
-			return nullopt;
-		}
-		return get_tuple_value_from_vector<args...>(onst vector<extend_node_value*>& v_list, std::index_sequence_for<args...>{});
-
-	}
-	template<typename... args, size_t... arg_idx>
-	optional<tuple<args>...> get_tuple_value_from_vector(const vector<extend_node_value*>& v_list, std::index_sequence<arg_idx...>)
-	{
-		auto temp_result = make_tuple((*v_list[arg_idx]).get_value<arg>()...);
-
-		if(!(get<arg_idx>(temp_result) &&...))
-		{
-			return nullopt;
-		}
-		return make_tuple(get<arg_idx>(temp_result).value()...);
-
 	}
 }

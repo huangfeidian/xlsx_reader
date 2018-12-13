@@ -1,6 +1,6 @@
 #pragma once
 
-#include <xlsx_types.h>
+#include "xlsx_types.h"
 #include <cstdint>
 #include <ostream>
 #include <nlohmann/json.hpp>
@@ -31,7 +31,7 @@ namespace xlsx_reader {
 	public:
 		cell(const cell& rhs) = default;
 		template <typename T>
-		T get_value() const;
+		T expect_value() const;
 		void set_value(bool _value);
 		void set_value(std::int32_t _value);
 		void set_value(std::uint32_t _value);
@@ -60,26 +60,26 @@ namespace xlsx_reader {
 
 	};
 	template<>
-	bool cell::get_value<bool>() const;
+	bool cell::expect_value<bool>() const;
 	template<>
-	std::int32_t cell::get_value<std::int32_t>() const;
+	std::int32_t cell::expect_value<std::int32_t>() const;
 	template<>
-	std::uint32_t cell::get_value<std::uint32_t>() const;
+	std::uint32_t cell::expect_value<std::uint32_t>() const;
 	template<>
-	std::int64_t cell::get_value<std::int64_t>() const;
+	std::int64_t cell::expect_value<std::int64_t>() const;
 	template<>
-	std::uint64_t cell::get_value<std::uint64_t>() const;
+	std::uint64_t cell::expect_value<std::uint64_t>() const;
 	template<>
-	float cell::get_value<float>() const;
+	float cell::expect_value<float>() const;
 	template<>
-	double cell::get_value<double>() const;
+	double cell::expect_value<double>() const;
 	template<>
-	date cell::get_value<date>() const;
+	date cell::expect_value<date>() const;
 	template<>
-	time cell::get_value<time>() const;
+	time cell::expect_value<time>() const;
 	template<>
-	datetime cell::get_value<datetime>() const;
+	datetime cell::expect_value<datetime>() const;
 	template<>
-	std::string_view cell::get_value<std::string_view>() const;
+	std::string_view cell::expect_value<std::string_view>() const;
 
 }
