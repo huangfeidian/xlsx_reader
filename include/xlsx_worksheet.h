@@ -5,10 +5,8 @@
 #include "xlsx_cell.h"
 #include <map>
 #include <string_view>
-#include <nlohmann/json.hpp>
 namespace xlsx_reader
 {
-	using json = nlohmann::json;
 	class worksheet
 	{
 	public:
@@ -26,8 +24,6 @@ namespace xlsx_reader
 		friend std::ostream& operator<<(std::ostream& output_steam, const worksheet& in_worksheet);
 		virtual ~worksheet();
 		void after_load_process(); //处理load完xml之后的后处理
-		friend void to_json(json& j, const worksheet& in_worksheet);
-	protected:
 		const std::vector<cell>& _cells;
 		std::uint32_t max_rows;
 		std::uint32_t max_columns;

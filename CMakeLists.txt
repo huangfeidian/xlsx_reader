@@ -11,6 +11,7 @@ endif(MSVC)
 
 set(CMAKE_DEBUG_POSTFIX "d")
 
+OPTION(WITH_JSON_SUPPORT "use json to view data" ON)
 
 FIND_PACKAGE(MINIZ CONFIG REQUIRED)
 INCLUDE_DIRECTORIES(${MINIZ_INCLUDE_DIRS})
@@ -18,8 +19,7 @@ INCLUDE_DIRECTORIES(${MINIZ_INCLUDE_DIRS})
 FIND_PACKAGE(TINYXML2 CONFIG REQUIRED)
 INCLUDE_DIRECTORIES(${TINYXML2_INCLUDE_DIRS})
 
-find_package(nlohmann_json CONFIG REQUIRED)
-INCLUDE_DIRECTORIES(${nlohmann_json_include_dirs})
+
 
 SET(XLSX_READER_SRC_DIR ${CMAKE_SOURCE_DIR}/source)
 SET(XLSX_READER_THIRD_PARTY_DIR ${CMAKE_SOURCE_DIR}/third_party)
@@ -31,13 +31,22 @@ FILE(GLOB_RECURSE XLSX_READER_TEST_LIST ${XLSX_READER_TEST_DIR}/*.cpp)
 
 INCLUDE_DIRECTORIES(${XLSX_READER_HEADER_DIR})
 
-
-
 ADD_LIBRARY(xlsx_reader STATIC ${XLSX_READER_SRC_LIST})
-target_link_libraries(xlsx_reader miniz tinyxml2 nlohmann_json::nlohmann_json)
+target_link_libraries(xlsx_reader miniz tinyxml2)
 
-ADD_EXECUTABLE(xlsx_test ${XLSX_READER_TEST_LIST})
-target_link_libraries(xlsx_test xlsx_reader)
+ADD_EXECUTABLE(cell_test ${XLSX_READER_TEST_DIR}/cell_extend_test.cpp)
+ADD_EXECUTABLE(workbook_test ${XLSX_READER_TEST_DIR}/workbook_test.cpp)
+
+target_link_libraries(cell_test xlsx_reader)
+target_link_libraries(workbook_test xlsx_reader)
+
+IF(WITH_JSON_SUPPORT)
+	find_package(nlohmann_json CONFIG REQUIRED)
+	INCLUDE_DIRECTORIES(${nlohmann_json_include_dirs})
+	ADD_EXECUTABLE(json_test ${XLSX_READER_TEST_DIR}/json_test.cpp)
+	target_link_libraries(json_test xlsx_reader)
+ENDIF(WITH_JSON_SUPPORT)
+
 
 foreach(p LIB INCLUDE)
 	set(var CMAKE_INSTALL_${p}DIR)

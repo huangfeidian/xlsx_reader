@@ -58,20 +58,7 @@ namespace xlsx_reader
 			}
 			after_load_process();
 		}
-		friend void to_json(json& j, const workbook& in_workbook)
-		{
-			json result;
-			result["sheet_relation"] = in_workbook.sheet_relations;
-			json all_sheets ;
-			for (const auto& i : in_workbook._worksheets)
-			{
-				all_sheets[string(i->_name)] = *i;
-			}
-			result["sheets"] = all_sheets;
-			result["name"] = in_workbook.workbook_name;
-			j = result;
-			return;
-		}
+		
 		friend std::ostream& operator<<(std::ostream& output_stream, const workbook& in_workbook)
 		{
 			output_stream<<"workbook name:"<<string(in_workbook.get_workbook_name())<<endl;

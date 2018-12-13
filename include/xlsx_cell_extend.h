@@ -6,7 +6,7 @@
 #include <memory>
 #include <variant>
 #include <string>
-#include <nlohmann/json.hpp>
+
 
 namespace xlsx_reader
 {
@@ -18,8 +18,6 @@ namespace xlsx_reader
 
 	template<typename T>
 	struct is_tuple : is_tuple_impl<std::decay_t<T>> {};
-
-	using json = nlohmann::json;
 	class cell_type_converter
 	{
 		// 用来处理类型转换
@@ -59,7 +57,7 @@ namespace xlsx_reader
 		extend_node_type_descriptor(const ref_detail_t& ref_detail);
 		friend std::ostream& operator<<(std::ostream& output_stream, const extend_node_type_descriptor& cur_node);
 		static const extend_node_type_descriptor* get_basic_type_desc(basic_node_type_descriptor in_type);
-		friend void to_json(json& j, const extend_node_type_descriptor& cur_extend_node_type_descriptor);
+		
 		friend bool operator==(const extend_node_type_descriptor& cur, const extend_node_type_descriptor& other);
 		friend bool operator!=(const extend_node_type_descriptor& cur, const extend_node_type_descriptor& other);
 		std::optional<list_detail_t> get_list_detail_t() const;
@@ -95,7 +93,7 @@ namespace xlsx_reader
 		extend_node_value(const extend_node_type_descriptor* in_type_desc, std::vector<extend_node_value*> in_value);
 		extend_node_value(const extend_node_type_descriptor* in_type_desc, std::string_view in_value);
 		friend std::ostream& operator<<(std::ostream& output_stream, const extend_node_value& cur_node);
-		friend void to_json(json& j, const extend_node_value& cur_extend_node_value);
+		
 		friend bool operator==(const extend_node_value& cur, const extend_node_value& other);
 		friend bool operator!=(const extend_node_value& cur, const extend_node_value& other);
 		template <typename T> 

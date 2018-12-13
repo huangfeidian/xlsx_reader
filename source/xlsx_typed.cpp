@@ -16,12 +16,7 @@ namespace xlsx_reader{
 		output_stream<<"name: "<< in_typed_header.header_name<<" type_desc: "<<*in_typed_header.type_desc<<" comment:"<<in_typed_header.header_comment<<endl;
 		return output_stream;
 	}
-	void to_json(json& j, const typed_header& cur_typed_header)
-	{
-		auto new_j = json({{"name", cur_typed_header.header_name}, {"type_desc", *cur_typed_header.type_desc}, {"comment", cur_typed_header.header_comment}});
-		j = new_j;
-		return;
-	}
+
 	bool typed_worksheet::convert_typed_header()
 	{
 		int column_idx = 1;
@@ -140,33 +135,6 @@ namespace xlsx_reader{
 	{
 		convert_typed_header();
 		convert_cell_to_typed_value();
-	}
-	void to_json(json& j, const typed_worksheet& cur_worksheet)
-	{
-		json new_j;
-		json header_array = json::array();
-		for (const auto& i : cur_worksheet.typed_headers)
-		{
-			header_array.push_back(json(*i));
-		}
-		new_j["headers"] = header_array;
-		new_j["sheet_id"] = cur_worksheet._sheet_id;
-		new_j["sheet_name"] = cur_worksheet._name;
-		json row_matrix;
-
-		for(const auto& row_info: cur_worksheet.typed_row_info)
-		{
-			auto cur_row_index = row_info.first;
-			json row_j = json::object();
-			for(const auto& column_info: row_info.second)
-			{
-				row_j[std::string((cur_worksheet.typed_headers[column_info.first - 1])->header_name)] = json(*column_info.second->cur_typed_value);
-			}
-			row_matrix[to_string(cur_row_index)] = row_j;
-		}
-		new_j["matrix"] = row_matrix;
-		j = new_j;
-		return;
 	}
 	typed_worksheet::~typed_worksheet()
 	{

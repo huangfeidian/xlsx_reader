@@ -89,24 +89,4 @@ namespace xlsx_reader {
 	{
 		return reinterpret_cast<const workbook<worksheet>*>(_workbook);
 	}
-	void to_json(json& j, const worksheet& cur_worksheet)
-	{
-		json new_j;
-        json row_matrix;
-		new_j["sheet_id"] = cur_worksheet._sheet_id;
-		new_j["sheet_name"] = cur_worksheet._name;
-        for(const auto& row_info: cur_worksheet.row_info)
-        {
-            auto cur_row_index = row_info.first;
-            json row_j = json::object();
-            for(const auto& column_info: row_info.second)
-            {
-                row_j[column_info.first] = json(*column_info.second);
-            }
-            row_matrix[cur_row_index] = row_j;
-        }
-        new_j["matrix"] = row_matrix;
-        j = new_j;
-        return;
-	}
 };
