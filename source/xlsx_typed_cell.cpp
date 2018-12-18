@@ -861,7 +861,37 @@ namespace xlsx_reader{
 		}
 		if(*cur.type_desc!=(*other.type_desc))
 		{
-			return false;
+			// maybe one in ref 
+			if (cur.type_desc->_type == basic_node_type_descriptor::ref_id || other.type_desc->_type == basic_node_type_descriptor::ref_id)
+			{
+				if (cur.type_desc->_type == basic_node_type_descriptor::ref_id && other.type_desc->_type == basic_node_type_descriptor::ref_id)
+				{
+					return false;
+				}
+				else
+				{
+					if (!cur.v_text.empty() || !other.v_text.empty())
+					{
+						if (cur.v_text != other.v_text)
+						{
+							return false;
+						}
+						else
+						{
+							return true;
+						}
+					}
+					else
+					{
+						return cur.v_int32 == other.v_int32;
+					}
+
+				}
+			}
+			else
+			{
+				return false;
+			}
 		}
 		switch(cur.type_desc->_type)
 		{
@@ -884,7 +914,6 @@ namespace xlsx_reader{
 			return cur.v_float == other.v_float;
 		case basic_node_type_descriptor::list:
 		case basic_node_type_descriptor::tuple:
-		case basic_node_type_descriptor::ref_id:
 		{
 			if (cur.v_list.size() != other.v_list.size())
 			{
@@ -903,6 +932,23 @@ namespace xlsx_reader{
 				}
 			}
 			return true;
+		}
+		case basic_node_type_descriptor::ref_id:
+		{
+			auto cur_ref_detail_opt = cur.type_desc->get_ref_detail_t();
+			if (!cur_ref_detail_opt)
+			{
+				return 0;
+			}
+			auto cur_ref_detail = cur_ref_detail_opt.value();
+			if (get<2>(cur_ref_detail) == "str")
+			{
+				return cur.v_text == other.v_text;
+			}
+			else
+			{
+				return cur.v_int32 == other.v_int32;
+			}
 		}
 			
 		default:
@@ -941,7 +987,6 @@ namespace xlsx_reader{
 			return std::hash<float>()(s->v_float);
 		case basic_node_type_descriptor::list:
 		case basic_node_type_descriptor::tuple:
-		case basic_node_type_descriptor::ref_id:
 		{
 			auto cur_size = s->v_list.size();
 			std::size_t result_hash = 0;
@@ -950,6 +995,23 @@ namespace xlsx_reader{
 				result_hash += operator()(i) / cur_size;
 			}
 			return result_hash;
+		}
+		case basic_node_type_descriptor::ref_id:
+		{
+			auto cur_ref_detail_opt = s->type_desc->get_ref_detail_t();
+			if (!cur_ref_detail_opt)
+			{
+				return 0;
+			}
+			auto cur_ref_detail = cur_ref_detail_opt.value();
+			if (get<2>(cur_ref_detail) == "str")
+			{
+				return std::hash<std::string_view>()(s->v_text);
+			}
+			else
+			{
+				return std::hash<std::int32_t>()(s->v_int32);
+			}
 		}
 			
 		default:

@@ -110,11 +110,11 @@ namespace xlsx_reader{
 				{
 					continue;
 				}
-				cur_row_typed_info[j.first] = cur_typed_cell;
+				cur_row_typed_info[j.first - 1] = cur_typed_cell;
 				typed_cells.push_back(*cur_typed_cell);
 			}
-			typed_row_info[i.first] = cur_row_typed_info;
-			_indexes[cur_row_typed_info.cbegin()->second->cur_typed_value] = i.first;
+			typed_row_info[i.first - value_begin_row_idx] = cur_row_typed_info;
+			_indexes[cur_row_typed_info.cbegin()->second->cur_typed_value] = i.first - value_begin_row_idx;
 
 		}
 	}
@@ -162,6 +162,21 @@ namespace xlsx_reader{
 		{
 			return iter->second;
 		}
+	}
+	const typed_cell* typed_worksheet::get_typed_cell(uint32_t row_idx, uint32_t column_idx) const
+	{
+		auto row_iter = typed_row_info.find(row_idx);
+		if (row_iter == typed_row_info.end())
+		{
+			return nullptr;
+		}
+		auto the_row = row_iter->second;
+		auto column_iter = the_row.find(column_idx);
+		if (column_iter == the_row.end())
+		{
+			return nullptr;
+		}
+		return column_iter->second;
 	}
 	optional<reference_wrapper<const map<uint32_t, const typed_cell*>>> typed_worksheet::get_ref_row(string_view sheet_name, const typed_value*  first_row_value) const
 	{
@@ -253,10 +268,11 @@ namespace xlsx_reader{
 		for(auto inf_ref_name: string_ref_headers)
 		{
 			auto header_idx = get_header_idx(inf_ref_name);
-			if(header_idx == std::numeric_limits<uint32_t>::max())
+			if(header_idx == 0)
 			{
 				return false;
 			}
+			header_idx--;
 			auto cur_header = typed_headers[header_idx];
 			if(!cur_header || !cur_header->type_desc)
 			{

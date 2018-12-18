@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <nlohmann/json.hpp>
 #include <unordered_map>
 #include "xlsx_cell.h"
@@ -15,9 +15,144 @@ namespace xlsx_reader
 		j = string(cur_cell._text);
 		return;
 	}
+	void to_json(json& j, const typed_node_type_descriptor& cur_type)
+	{
+		static unordered_map<basic_node_type_descriptor, string_view> type_to_string = {
+			{basic_node_type_descriptor::comment, "comment"},
+			{basic_node_type_descriptor::string, "string"},
+			{basic_node_type_descriptor::number_bool, "bool"},
+			{basic_node_type_descriptor::number_u32, "uint32"},
+			{basic_node_type_descriptor::number_32, "int32"},
+			{basic_node_type_descriptor::number_64, "int64"},
+			{basic_node_type_descriptor::number_u64, "uint64"},
+			{basic_node_type_descriptor::number_float, "float"},
+			{basic_node_type_descriptor::number_double, "double"},
+		};
+		auto temp_iter = type_to_string.find(cur_type._type);
+		if (temp_iter != type_to_string.end())
+		{
+			j = json(temp_iter->second);
+			return;
+		}
+
+		switch (cur_type._type)
+		{
+		case basic_node_type_descriptor::list:
+		{
+			auto temp_detail = std::get<typed_node_type_descriptor::list_detail_t>(cur_type._type_detail);
+			json result_json;
+			string sep_string = ",";
+			sep_string[0] = std::get<2>(temp_detail);
+			result_json["list"] = { {"type", *std::get<0>(temp_detail)}, {"seperator", sep_string}, {"size", std::get<1>(temp_detail)} };
+			j = result_json;
+			return;
+		}
+		case basic_node_type_descriptor::tuple:
+		{
+			auto temp_detail = std::get<typed_node_type_descriptor::tuple_detail_t>(cur_type._type_detail);
+			json result_json;
+			json type_detail = json::array();
+			for (const auto& i : temp_detail.first)
+			{
+				type_detail.push_back(*i);
+			}
+			string sep_string = ",";
+			sep_string[0] = temp_detail.second;
+			result_json["tuple"] = { {"type", type_detail}, {"seperator", sep_string} };
+			j = result_json;
+			return;
+		}
+		case basic_node_type_descriptor::ref_id:
+		{
+			auto temp_detail = std::get<typed_node_type_descriptor::ref_detail_t>(cur_type._type_detail);
+			string_view cur_workbook, cur_worksheet, cur_ref_type;
+			if (!cur_workbook.empty())
+			{
+				json result_json;
+				result_json["ref"] = { cur_worksheet, cur_ref_type };
+				j = result_json;
+				return;
+			}
+			else
+			{
+				json result_json;
+				result_json["ref"] = { cur_workbook, cur_worksheet, cur_ref_type };
+				j = result_json;
+				return;
+			}
+		}
+		default:
+			j = nullptr;
+			return;
+		}
+		return;
+	}
+	void to_json(json& j, const typed_value& cur_value)
+	{
+		if (!cur_value.type_desc)
+		{
+			j = nullptr;
+			return;
+		}
+		switch (cur_value.type_desc->_type)
+		{
+		case basic_node_type_descriptor::comment:
+			j = cur_value.v_text;
+			return;
+		case basic_node_type_descriptor::number_bool:
+			j = cur_value.v_bool;
+			return;
+		case basic_node_type_descriptor::number_32:
+			j = cur_value.v_int32;
+			return;
+		case basic_node_type_descriptor::number_u32:
+			j = cur_value.v_uint32;
+			return;
+		case basic_node_type_descriptor::number_64:
+			j = cur_value.v_int64;
+			return;
+
+		case basic_node_type_descriptor::number_u64:
+			j = cur_value.v_uint64;
+			return;
+
+		case basic_node_type_descriptor::number_float:
+			j = cur_value.v_float;
+			return;
+		case basic_node_type_descriptor::number_double:
+			j = cur_value.v_double;
+			return;
+		case basic_node_type_descriptor::ref_id:
+			j = cur_value.v_text;
+			return;
+		case basic_node_type_descriptor::string:
+			j = cur_value.v_text;
+			return;
+		case basic_node_type_descriptor::list:
+			j = json::array();
+			for (const auto& i : cur_value.v_list)
+			{
+				j.push_back(json(*i));
+			}
+			return;
+		case basic_node_type_descriptor::tuple:
+			j = json::array();
+			for (const auto& i : cur_value.v_list)
+			{
+				j.push_back(json(*i));
+			}
+			return;
+		default:
+			j = nullptr;
+			return;
+		}
+	}
 	void to_json(json& j, const typed_header& cur_typed_header)
 	{
-		auto new_j = json({{"name", cur_typed_header.header_name}, {"type_desc", *cur_typed_header.type_desc}, {"comment", cur_typed_header.header_comment}});
+		json new_j;
+		new_j["name"] = cur_typed_header.header_name;
+		new_j["type_desc"] = json(*cur_typed_header.type_desc);
+		new_j["comment"] = cur_typed_header.header_comment;
 		j = new_j;
 		return;
 	}
@@ -83,136 +218,6 @@ namespace xlsx_reader
 		j = new_j;
 		return;
 	}
-	void to_json(json& j, const typed_node_type_descriptor& cur_type)
-	{
-		static unordered_map<basic_node_type_descriptor, string_view> type_to_string = {
-			{basic_node_type_descriptor::comment, "comment"},
-			{basic_node_type_descriptor::string, "string"},
-			{basic_node_type_descriptor::number_bool, "bool"},
-			{basic_node_type_descriptor::number_u32, "uint32"},
-			{basic_node_type_descriptor::number_32, "int32"},
-			{basic_node_type_descriptor::number_64, "int64"},
-			{basic_node_type_descriptor::number_u64, "uint64"},
-			{basic_node_type_descriptor::number_float, "float"},
-			{basic_node_type_descriptor::number_double, "double"},
-		};
-		auto temp_iter = type_to_string.find(cur_type._type);
-		if(temp_iter != type_to_string.end())
-		{
-			j = json(temp_iter->second);
-			return;
-		}
-		
-		switch(cur_type._type)
-		{
-		case basic_node_type_descriptor::list:
-			{
-				auto temp_detail = std::get<typed_node_type_descriptor::list_detail_t>(cur_type._type_detail);
-				json result_json;
-				string sep_string = ",";
-				sep_string[0] = std::get<2>(temp_detail);
-				result_json["list"] = {{"type", *std::get<0>(temp_detail)}, {"seperator", sep_string}, {"size", std::get<1>(temp_detail)}};
-				j = result_json;
-				return; 
-			}
-		case basic_node_type_descriptor::tuple:
-			{
-				auto temp_detail = std::get<typed_node_type_descriptor::tuple_detail_t>(cur_type._type_detail);
-				json result_json;
-				json type_detail = json::array();
-				for (const auto& i : temp_detail.first)
-				{
-					type_detail.push_back(*i);
-				}
-				string sep_string = ",";
-				sep_string[0] = temp_detail.second;
-				result_json["tuple"] = { {"type", type_detail}, {"seperator", sep_string} };
-				j = result_json;
-				return; 
-			}
-		case basic_node_type_descriptor::ref_id:
-			{
-				auto temp_detail = std::get<typed_node_type_descriptor::ref_detail_t>(cur_type._type_detail);
-				string_view cur_workbook, cur_worksheet, cur_ref_type;
-				if(!cur_workbook.empty())
-				{
-					json result_json;
-					result_json["ref"] = {cur_worksheet, cur_ref_type};
-					j = result_json;
-					return;
-				}
-				else
-				{
-					json result_json;
-					result_json["ref"] = {cur_workbook, cur_worksheet, cur_ref_type};
-					j = result_json;
-					return;
-				}
-			}
-		default:
-			j = nullptr;
-			return;
-		}
-		return;
-	}
-	void to_json(json& j, const typed_value& cur_value)
-	{
-		if (!cur_value.type_desc)
-		{
-			j = nullptr;
-			return;
-		}
-		switch(cur_value.type_desc->_type)
-		{
-		case basic_node_type_descriptor::comment:
-			j = cur_value.v_text;
-			return;
-		case basic_node_type_descriptor::number_bool:
-			j = cur_value.v_bool;
-			return;
-		case basic_node_type_descriptor::number_32:
-			j = cur_value.v_int32;
-			return;
-		case basic_node_type_descriptor::number_u32:
-			j = cur_value.v_uint32;
-			return;
-		case basic_node_type_descriptor::number_64:
-			j = cur_value.v_int64;
-			return;
-
-		case basic_node_type_descriptor::number_u64:
-			j = cur_value.v_uint64;
-			return;
-
-		case basic_node_type_descriptor::number_float:
-			j = cur_value.v_float;
-			return;
-		case basic_node_type_descriptor::number_double:
-			j = cur_value.v_double;
-			return;
-		case basic_node_type_descriptor::ref_id:
-			j = cur_value.v_text;
-			return;
-		case basic_node_type_descriptor::string:
-			j = cur_value.v_text;
-			return;
-		case basic_node_type_descriptor::list:
-			j = json::array();
-			for(const auto& i: cur_value.v_list)
-			{
-				j.push_back(json(*i));
-			}
-			return;
-		case basic_node_type_descriptor::tuple:
-			j = json::array();
-			for(const auto& i: cur_value.v_list)
-			{
-				j.push_back(json(*i));
-			}
-			return;
-		default:
-			j = nullptr;
-			return;
-		}
-	}
+	
+	
 }
