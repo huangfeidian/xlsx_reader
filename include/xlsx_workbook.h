@@ -101,7 +101,11 @@ namespace xlsx_reader
 				while(cell_node)
 				{
 					uint32_t col_idx = row_column_tuple_from_string(cell_node->Attribute("r")).second;
-					
+					auto v_node = cell_node->FirstChildElement("v");
+					if (!v_node)
+					{
+						break;
+					}
 					auto current_value = string_view(cell_node->FirstChildElement("v")->GetText());
 					auto type_attr = cell_node->Attribute("t");
 					if(type_attr && string(type_attr) == "s")

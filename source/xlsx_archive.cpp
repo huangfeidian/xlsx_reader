@@ -128,7 +128,14 @@ namespace xlsx_reader
 		{
 			auto current_value = share_string_begin->FirstChildElement("t")->GetText();
 			// cout << "value " << current_value << " has type " << current_type << endl;
-			all_share_strings.emplace_back(current_value);
+			if (current_value)
+			{
+				all_share_strings.emplace_back(current_value);
+			}
+			else
+			{
+				all_share_strings.emplace_back(""sv);
+			}
 			share_string_begin = share_string_begin->NextSiblingElement("si");
 		}
 		return all_share_strings;

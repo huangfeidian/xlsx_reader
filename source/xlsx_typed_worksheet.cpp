@@ -20,6 +20,10 @@ namespace xlsx_reader{
 	bool typed_worksheet::convert_typed_header()
 	{
 		int column_idx = 1;
+		if (row_info.find(1) == row_info.end())
+		{
+			return false;
+		}
 		auto header_name_row = get_row(1);
 		for(const auto& i: header_name_row)
 		{
