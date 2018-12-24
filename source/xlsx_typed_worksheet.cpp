@@ -200,7 +200,9 @@ namespace xlsx_reader{
 		{
 			return nullopt;
 		}
-		return cref(the_worksheet.get_typed_row(row_index.value()));
+		auto pre = cref(the_worksheet.get_typed_row(row_index.value()));
+		auto result = cref(the_worksheet.typed_row_info[row_index.value()]);
+		return result;
 	}
 	const map<uint32_t, const typed_cell*>& typed_worksheet::get_typed_row(uint32_t _idx) const
 	{
