@@ -194,15 +194,13 @@ namespace xlsx_reader{
 		{
 			return nullopt;
 		}
-		auto the_worksheet = current_workbook->get_worksheet(sheet_idx.value());
+		const auto& the_worksheet = current_workbook->get_worksheet(sheet_idx.value());
 		auto row_index = the_worksheet.get_indexed_row(first_row_value);
 		if(!row_index)
 		{
 			return nullopt;
 		}
-		auto pre = cref(the_worksheet.get_typed_row(row_index.value()));
-		auto result = cref(the_worksheet.typed_row_info[row_index.value()]);
-		return result;
+		return cref(the_worksheet.get_typed_row(row_index.value()));
 	}
 	const map<uint32_t, const typed_cell*>& typed_worksheet::get_typed_row(uint32_t _idx) const
 	{

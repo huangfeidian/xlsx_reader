@@ -74,8 +74,8 @@ std::optional<Color> read_color_from_cell(const typed_worksheet& cur_worksheet, 
 			}
 			else
 			{
-				vector<uint32_t> rgb_values;
-				for (int i = 2; i < 5; i++)
+				vector<int32_t> rgb_values;
+				for (int i = 1; i < 4; i++)
 				{
 					auto cur_cell_value_iter = row_value.find(i);
 					if (cur_cell_value_iter == row_value.end())
@@ -83,7 +83,7 @@ std::optional<Color> read_color_from_cell(const typed_worksheet& cur_worksheet, 
 						return std::nullopt;
 					}
 					auto cur_cell_value = cur_cell_value_iter->second;
-					auto cur_int_opt = cur_cell_value->cur_typed_value->expect_value<std::uint32_t>();
+					auto cur_int_opt = cur_cell_value->cur_typed_value->expect_value<std::int32_t>();
 					if (!cur_int_opt)
 					{
 						return std::nullopt;
