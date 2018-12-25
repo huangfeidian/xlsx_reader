@@ -1,5 +1,4 @@
 ﻿#include <xlsx_cell.h>
-#include <xlsx_types.h>
 #include <iostream>
 #include <charconv>
 namespace xlsx_reader

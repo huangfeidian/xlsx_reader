@@ -47,6 +47,8 @@ namespace xlsx_reader{
 		std::unordered_map<const typed_value*, std::uint32_t, typed_value_hash, typed_value_ptr_equal> _indexes;
 		std::unordered_map<std::string_view, std::uint32_t> header_column_index;
 		void after_load_process();
+		typed_worksheet(const typed_worksheet& other) = delete;
+		typed_worksheet& operator=(const typed_worksheet& other) = delete;
 	private:
 		void convert_cell_to_typed_value();
 		bool convert_typed_header();

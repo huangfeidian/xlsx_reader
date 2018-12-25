@@ -6,7 +6,7 @@
 #include <memory>
 #include <variant>
 #include <string>
-
+#include <vector>
 
 namespace xlsx_reader
 {

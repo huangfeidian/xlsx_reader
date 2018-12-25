@@ -1110,26 +1110,48 @@ namespace xlsx_reader{
 	template <>
 	optional<std::uint32_t> typed_value::expect_simple_value<uint32_t>() const
 	{
-		if(type_desc->_type != basic_node_type_descriptor::number_u32)
+		auto cur_type = type_desc->_type;
+		if(cur_type == basic_node_type_descriptor::number_u32)
 		{
-			return nullopt;
+			return v_uint32;
+		}
+		else if(cur_type == basic_node_type_descriptor::number_32)
+		{
+			if (v_int32 < 0)
+			{
+				return nullopt;
+			}
+			return static_cast<std::uint32_t>(v_int32);
 		}
 		else
 		{
-			return v_uint32;
+			return nullopt;
 		}
 	}
 
 	template <>
 	optional<std::int32_t> typed_value::expect_simple_value<int32_t>() const
 	{
-		if(type_desc->_type != basic_node_type_descriptor::number_32)
+		auto cur_type = type_desc->_type;
+		if(cur_type == basic_node_type_descriptor::number_32)
 		{
-			return nullopt;
+			return v_int32;
+		}
+		else if(cur_type == basic_node_type_descriptor::number_u32)
+		{
+			if (v_uint32 > numeric_limits<uint32_t>::max() / 2)
+			{
+				return nullopt;
+			}
+			else
+			{
+				return static_cast<int>(v_uint32);
+			}
+			
 		}
 		else
 		{
-			return v_int32;
+			return nullopt;
 		}
 	}
 

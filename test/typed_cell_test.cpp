@@ -1,5 +1,7 @@
-#include <xlsx_typed_cell.h>
+﻿#include <xlsx_typed_cell.h>
 #include <iostream>
+#include <unordered_map>
+
 using namespace std;
 using namespace xlsx_reader;
 bool test_type_parse()

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <string>
 #include <vector>
@@ -30,6 +30,7 @@ namespace xlsx_reader
 		std::map<std::uint32_t, std::map<std::uint32_t, const cell*>> row_info;
 		void load_from_cells();
 
-	
+		worksheet& operator=(const worksheet& other) = delete;
+		worksheet(const worksheet& other) = delete;
 	};
 }

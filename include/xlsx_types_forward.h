@@ -1,4 +1,7 @@
-#pragma once
+﻿#pragma once
+#include <string>
+#include <cstdint>
+#include <tuple>
 
 namespace xlsx_reader
 {
@@ -8,4 +11,6 @@ namespace xlsx_reader
 	class workbook;
 	class archive;
 	class typed_worksheet;
+	using relation_desc = std::tuple<std::string, std::string, std::string>;
+	using sheet_desc = std::tuple<std::string, std::uint32_t, std::string>;
 }

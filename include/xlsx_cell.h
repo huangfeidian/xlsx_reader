@@ -1,6 +1,6 @@
-#pragma once
+﻿#pragma once
 
-#include "xlsx_types.h"
+#include "xlsx_types_forward.h"
 #include <cstdint>
 #include <ostream>
 #include <optional>

@@ -129,7 +129,7 @@ int main(void)
 	//}
 	//return 1;
 	auto other_sheet_idx = current_workbook.get_sheet_index_by_name("tile_1");
-	auto current_worksheet = current_workbook.get_worksheet(other_sheet_idx.value());
+	const auto& current_worksheet = current_workbook.get_worksheet(other_sheet_idx.value());
 	auto cur_color_cell = current_worksheet.get_typed_cell(0, 5);
 	auto result_color = read_color_from_cell(current_worksheet, *cur_color_cell);
 
