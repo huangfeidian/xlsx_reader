@@ -173,4 +173,42 @@ vector<string_view> split_string(string_view input_string, char sep)
 	return tokens;
 		
 }
+string_view strip_blank(std::string_view input)
+{
+	int left = 0;
+	int right = input.size();
+	while (left < right)
+	{
+		auto cur_char = input[left];
+		if (cur_char == ' ' || cur_char == '\t' || cur_char == '\n')
+		{
+			left++;
+		}
+		else
+		{
+			break;
+		}
+	}
+	while (left < right)
+	{
+		
+		auto cur_char = input[right - 1];
+		if (cur_char == ' ' || cur_char == '\t' || cur_char == '\n')
+		{
+			right--;
+		}
+		else
+		{
+			break;
+		}
+	}
+	if (left == right)
+	{
+		return string_view();
+	}
+	else
+	{
+		return input.substr(left, right - left);
+	}
+}
 }

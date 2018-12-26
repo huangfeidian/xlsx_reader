@@ -113,7 +113,7 @@ namespace xlsx_reader
 						current_value = shared_string[stoi(string(current_value))];
 					}
 					cell_node = cell_node->NextSiblingElement("c");
-					result.emplace_back(row_index, col_idx, current_value);
+					result.emplace_back(row_index, col_idx, strip_blank(current_value));
 
 				}
 				row_node = row_node->NextSiblingElement("row");

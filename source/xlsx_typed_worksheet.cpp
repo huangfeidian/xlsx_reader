@@ -214,85 +214,101 @@ namespace xlsx_reader{
 	{
 		if(typed_headers[0]->header_name != index_column_name)
 		{
+			cout << "index column name mismatch input " << index_column_name << " current " << typed_headers[0]->header_name << endl;
 			return false;
 		}
 		for(const auto& i : other_headers)
 		{
 			if (!i.second)
 			{
+				cout << "missing type desc for header " << i.first << endl;
 				return false;
 			}
 			auto header_idx = get_header_idx(i.second->header_name);
 			if(header_idx == 0)
 			{
+				cout << " cant find header " << i.second->header_name << endl;
 				return false;
 			}
 			header_idx--;
 			if (header_idx >= typed_headers.size())
 			{
+				cout << " cant find header " << i.second->header_name << endl;
 				return false;
 			}
 			if (!typed_headers[header_idx])
 			{
+				cout << " cant find header " << i.second->header_name << endl;
 				return false;
 			}
 			if(!(*typed_headers[header_idx] == *i.second))
 			{
+				cout << "header type mismatch for  " << i.second->header_name << endl;
 				return false;
 			}
 
 		}
-		for(auto inf_ref_name: int_ref_headers)
+		for(auto int_ref_name: int_ref_headers)
 		{
-			auto header_idx = get_header_idx(inf_ref_name);
+			auto header_idx = get_header_idx(int_ref_name);
 			if(header_idx == 0)
 			{
+				cout << "cant find ref int header " << int_ref_name << endl;
 				return false;
 			}
 			auto cur_header = typed_headers[header_idx];
 
 			if(!cur_header ||!cur_header->type_desc)
 			{
+				cout << "type desc is empty for ref int header " << int_ref_name << endl;
 				return false;
 			}
 			if(cur_header->type_desc->_type != basic_node_type_descriptor::ref_id)
 			{
+				cout << " not ref type for ref int header " << int_ref_name << endl;
 				return false;
 			}
 			auto ref_detail = cur_header->type_desc->get_ref_detail_t();
 			if(!ref_detail)
 			{
+				cout << " not ref type for ref int header " << int_ref_name << endl;
 				return false;
 			}
 			if(std::get<2>(ref_detail.value()) != "int"sv)
 			{
+				cout << " not int ref type for ref int header " << int_ref_name << endl;
 				return false;
 			}
 		}
-		for(auto inf_ref_name: string_ref_headers)
+		for(auto str_ref_name: string_ref_headers)
 		{
-			auto header_idx = get_header_idx(inf_ref_name);
+			auto header_idx = get_header_idx(str_ref_name);
 			if(header_idx == 0)
 			{
+				cout << "cant find ref str header " << str_ref_name << endl;
 				return false;
 			}
 			header_idx--;
 			auto cur_header = typed_headers[header_idx];
 			if(!cur_header || !cur_header->type_desc)
 			{
+				cout << "type desc is empty for ref str header " << str_ref_name << endl;
 				return false;
 			}
 			if(cur_header->type_desc->_type != basic_node_type_descriptor::ref_id)
 			{
+				cout << " not ref type for ref str header " << str_ref_name << endl;
 				return false;
 			}
 			auto ref_detail = cur_header->type_desc->get_ref_detail_t();
 			if(!ref_detail)
 			{
+				cout << " not ref type for ref str header " << str_ref_name << endl;
 				return false;
 			}
 			if(std::get<2>(ref_detail.value()) != "str"sv)
 			{
+				cout << " not str ref type for ref str header " << str_ref_name << endl;
 				return false;
 			}
 		}

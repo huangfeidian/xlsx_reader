@@ -1,6 +1,7 @@
 ﻿#include <xlsx_typed_cell.h>
 #include <iostream>
 #include <unordered_map>
+#include <xlsx_utils.h>
 
 using namespace std;
 using namespace xlsx_reader;
@@ -103,8 +104,17 @@ bool test_type_value_parse()
 	}
 	return true;
 }
+void test_stip()
+{
+	vector<string_view> test_cases{ ""sv, " "sv, "\t"sv, "\n"sv, " a"sv, "a "sv, " a "sv};
+	for (auto a : test_cases)
+	{
+		cout << "after stip from " << a << " to " << strip_blank(a) << endl;
+	}
+}
 int main()
 {
-	test_type_value_parse();
-	test_type_parse();
+	//test_type_value_parse();
+	//test_type_parse();
+	test_stip();
 }

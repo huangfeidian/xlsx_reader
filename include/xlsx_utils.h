@@ -15,5 +15,6 @@ namespace xlsx_reader
 	std::vector<std::string_view> split_string(std::string_view input_string, char sep);
 	std::optional<double> cast_numeric(std::string_view s);
 	std::optional<int> cast_int(std::string_view s);
+	std::string_view strip_blank(std::string_view input);
 }
 
