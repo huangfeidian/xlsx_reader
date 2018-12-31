@@ -10,7 +10,7 @@ using namespace xlsx_reader;
 int main(void)
 {
 	//string file_name(argv[1]);
-	string file_name = "../examples/xlsx_shape_test.xlsx";
+	string file_name = "../examples/xlsx_shape_test2.xlsx";
 	int wait = 0;
 	cout << "size of typed value is " << sizeof(typed_value) << endl;
 	auto archive_content = make_shared<archive>(file_name);

@@ -84,7 +84,7 @@ namespace xlsx_reader{
 		all_cell_values.clear();
 		auto value_begin_row_idx = value_begin_row();
 		const auto& all_row_info = get_all_row();
-		if (value_begin_row_idx >= max_rows)
+		if (value_begin_row_idx > max_rows)
 		{
 			all_cell_values.emplace_back();
 			return;
@@ -193,7 +193,7 @@ namespace xlsx_reader{
 		{
 			return all_cell_values[0];
 		}
-		return all_cell_values[row_index.value()];
+		return the_worksheet.get_typed_row(row_index.value());
 	}
 	const vector<typed_value>& typed_worksheet::get_typed_row(uint32_t _idx) const
 	{
