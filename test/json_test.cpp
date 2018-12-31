@@ -40,7 +40,7 @@ bool json_test_type_parse()
 	bool failed = false;
     for(const auto& i : valid_inputs)
     {
-        auto current_type = typed_node_value_constructor::parse_type(string_view(i));
+        auto current_type = typed_value_parser::parse_type(string_view(i));
 		if (current_type)
 		{
 			cout << *current_type << endl;
@@ -86,10 +86,10 @@ bool json_test_type_value_parse()
 	{
 		auto type_str = i.first;
 		auto value_strs = i.second;
-		auto current_type = typed_node_value_constructor::parse_type(string_view(type_str));
+		auto current_type = typed_value_parser::parse_type(string_view(type_str));
 		for (const auto & one_value : value_strs)
 		{
-			auto current_value = typed_node_value_constructor::parse_value_with_type(current_type, string_view(one_value));
+			auto current_value = typed_value_parser::parse_value_with_type(current_type, string_view(one_value));
 			if (current_value)
 			{
 				cout << "parse type "<<*current_type<<" with value "<< one_value<<" match with result "<<*current_value << endl;

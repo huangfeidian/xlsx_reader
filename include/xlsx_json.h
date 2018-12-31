@@ -1,7 +1,6 @@
 ﻿#pragma once
 #include <nlohmann/json.hpp>
 #include <unordered_map>
-#include "xlsx_cell.h"
 #include "xlsx_typed_cell.h"
 #include "xlsx_workbook.h"
 #include "xlsx_worksheet.h"
@@ -10,23 +9,18 @@ namespace xlsx_reader
 {
 	using json = nlohmann::json;
 	using namespace std;
-	void to_json(json& j, const cell& cur_cell)
-	{
-		j = string(cur_cell._text);
-		return;
-	}
 	void to_json(json& j, const typed_node_type_descriptor& cur_type)
 	{
-		static unordered_map<basic_node_type_descriptor, string_view> type_to_string = {
-			{basic_node_type_descriptor::comment, "comment"},
-			{basic_node_type_descriptor::string, "string"},
-			{basic_node_type_descriptor::number_bool, "bool"},
-			{basic_node_type_descriptor::number_u32, "uint32"},
-			{basic_node_type_descriptor::number_32, "int32"},
-			{basic_node_type_descriptor::number_64, "int64"},
-			{basic_node_type_descriptor::number_u64, "uint64"},
-			{basic_node_type_descriptor::number_float, "float"},
-			{basic_node_type_descriptor::number_double, "double"},
+		static unordered_map<basic_value_type, string_view> type_to_string = {
+			{basic_value_type::comment, "comment"},
+			{basic_value_type::string, "string"},
+			{basic_value_type::number_bool, "bool"},
+			{basic_value_type::number_u32, "uint32"},
+			{basic_value_type::number_32, "int32"},
+			{basic_value_type::number_64, "int64"},
+			{basic_value_type::number_u64, "uint64"},
+			{basic_value_type::number_float, "float"},
+			{basic_value_type::number_double, "double"},
 		};
 		auto temp_iter = type_to_string.find(cur_type._type);
 		if (temp_iter != type_to_string.end())
@@ -37,7 +31,7 @@ namespace xlsx_reader
 
 		switch (cur_type._type)
 		{
-		case basic_node_type_descriptor::list:
+		case basic_value_type::list:
 		{
 			auto temp_detail = std::get<typed_node_type_descriptor::list_detail_t>(cur_type._type_detail);
 			json result_json;
@@ -47,7 +41,7 @@ namespace xlsx_reader
 			j = result_json;
 			return;
 		}
-		case basic_node_type_descriptor::tuple:
+		case basic_value_type::tuple:
 		{
 			auto temp_detail = std::get<typed_node_type_descriptor::tuple_detail_t>(cur_type._type_detail);
 			json result_json;
@@ -62,7 +56,7 @@ namespace xlsx_reader
 			j = result_json;
 			return;
 		}
-		case basic_node_type_descriptor::ref_id:
+		case basic_value_type::ref_id:
 		{
 			auto temp_detail = std::get<typed_node_type_descriptor::ref_detail_t>(cur_type._type_detail);
 			string_view cur_workbook, cur_worksheet, cur_ref_type;
@@ -96,46 +90,46 @@ namespace xlsx_reader
 		}
 		switch (cur_value.type_desc->_type)
 		{
-		case basic_node_type_descriptor::comment:
+		case basic_value_type::comment:
 			j = cur_value.v_text;
 			return;
-		case basic_node_type_descriptor::number_bool:
+		case basic_value_type::number_bool:
 			j = cur_value.v_bool;
 			return;
-		case basic_node_type_descriptor::number_32:
+		case basic_value_type::number_32:
 			j = cur_value.v_int32;
 			return;
-		case basic_node_type_descriptor::number_u32:
+		case basic_value_type::number_u32:
 			j = cur_value.v_uint32;
 			return;
-		case basic_node_type_descriptor::number_64:
+		case basic_value_type::number_64:
 			j = cur_value.v_int64;
 			return;
 
-		case basic_node_type_descriptor::number_u64:
+		case basic_value_type::number_u64:
 			j = cur_value.v_uint64;
 			return;
 
-		case basic_node_type_descriptor::number_float:
+		case basic_value_type::number_float:
 			j = cur_value.v_float;
 			return;
-		case basic_node_type_descriptor::number_double:
+		case basic_value_type::number_double:
 			j = cur_value.v_double;
 			return;
-		case basic_node_type_descriptor::ref_id:
+		case basic_value_type::ref_id:
 			j = cur_value.v_text;
 			return;
-		case basic_node_type_descriptor::string:
+		case basic_value_type::string:
 			j = cur_value.v_text;
 			return;
-		case basic_node_type_descriptor::list:
+		case basic_value_type::list:
 			j = json::array();
 			for (const auto& i : cur_value.v_list)
 			{
 				j.push_back(json(*i));
 			}
 			return;
-		case basic_node_type_descriptor::tuple:
+		case basic_value_type::tuple:
 			j = json::array();
 			for (const auto& i : cur_value.v_list)
 			{
@@ -168,16 +162,20 @@ namespace xlsx_reader
 		new_j["sheet_id"] = cur_worksheet._sheet_id;
 		new_j["sheet_name"] = cur_worksheet._name;
 		json row_matrix;
-
-		for(const auto& row_info: cur_worksheet.typed_row_info)
+		const auto& all_row_info = cur_worksheet.get_all_typed_row_info();
+		for (int i = 1; i < all_row_info.size(); i++)
 		{
-			auto cur_row_index = row_info.first;
+			auto cur_row_index = i;
 			json row_j = json::object();
-			for(const auto& column_info: row_info.second)
+			for (int j = 1; j < all_row_info[i].size(); j++)
 			{
-				row_j[std::string((cur_worksheet.typed_headers[column_info.first - 1])->header_name)] = json(*column_info.second->cur_typed_value);
+				row_j[std::string((cur_worksheet.typed_headers[j - 1])->header_name)] = json(all_row_info[i][j]);
 			}
 			row_matrix[to_string(cur_row_index)] = row_j;
+		}
+		for(const auto& row_info: cur_worksheet.get_all_typed_row_info())
+		{
+			
 		}
 		new_j["matrix"] = row_matrix;
 		j = new_j;
@@ -204,13 +202,14 @@ namespace xlsx_reader
 		json row_matrix;
 		new_j["sheet_id"] = cur_worksheet._sheet_id;
 		new_j["sheet_name"] = cur_worksheet._name;
-		for(const auto& row_info: cur_worksheet.row_info)
+		const auto& all_row_info = cur_worksheet.get_all_row();
+		for (int i = 0; i < all_row_info.size(); i++)
 		{
-			auto cur_row_index = row_info.first;
+			auto cur_row_index = i;
 			json row_j = json::object();
-			for(const auto& column_info: row_info.second)
+			for (int j = 0; j < all_row_info[i].size(); j++)
 			{
-				row_j[column_info.first] = json(*column_info.second);
+				row_j[j] = cur_worksheet.get_cell(i, j);
 			}
 			row_matrix[cur_row_index] = row_j;
 		}

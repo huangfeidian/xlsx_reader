@@ -1,5 +1,6 @@
 ﻿#include <xlsx_typed_worksheet.h>
 #include <iostream>
+
 namespace {
 	using namespace xlsx_reader;
 	using namespace std;
@@ -20,70 +21,56 @@ namespace xlsx_reader{
 	bool typed_worksheet::convert_typed_header()
 	{
 		int column_idx = 1;
-		if (row_info.find(1) == row_info.end())
+		if (get_max_row() < 1)
 		{
 			return false;
 		}
-		auto header_name_row = get_row(1);
-		for(const auto& i: header_name_row)
+		const auto& header_name_row = get_row(1);
+		if (header_name_row.empty())
 		{
-			if(i.first != column_idx)
+			return false;
+		}
+		for(int i= 1; i< header_name_row.size(); i++)
+		{			
+			auto cur_header_name = get_cell(1, i);
+			if(cur_header_name.empty())
 			{
-				cout<<"not continuous header row, current is "<< i.first<<" while expecting "<< column_idx<<endl;
+				cerr<<"empty header name at idx "<<i<<endl;
 				return false;
 			}
-			
-			auto cur_cell_value = i.second;
-			if(!cur_cell_value)
+
+			auto cur_cell_value = get_cell(2, column_idx);
+
+			if (cur_cell_value.empty())
 			{
-				cerr<<"empty header name at idx "<<i.first<<endl;
-				return false;
+				cerr <<"invalid type desc for header type at column " << i << endl;
 			}
-			auto cur_header_name_opt = cur_cell_value->expect_value<string_view>();
-			if (!cur_header_name_opt)
-			{
-				cerr << "empty header name at idx " << i.first << endl;
-				return false;
-			}
-			auto cur_header_name = cur_header_name_opt.value();
-			cur_cell_value = get_cell(2, column_idx);
-			if(!cur_cell_value)
-			{
-				cerr<<"empty cell type value for header "<< cur_header_name<<endl;
-				return false;
-			}
-			auto cur_type_opt = cur_cell_value->expect_value<string_view>();
-			if (!cur_type_opt)
-			{
-				cerr <<"invalid type desc "<<cur_cell_value->_text<<" for header type at column " << i.first << endl;
-			}
-			auto cur_type_desc = typed_node_value_constructor::parse_type(cur_type_opt.value());
+			auto cur_type_desc = typed_value_parser::parse_type(cur_cell_value);
 
 			if (column_idx == 1)
 			{
 				// expect int or str in first column
 				switch (cur_type_desc->_type)
 				{
-				case basic_node_type_descriptor::number_bool:
-				case basic_node_type_descriptor::number_float:
-				case basic_node_type_descriptor::number_double:
-				case basic_node_type_descriptor::comment:
-				case basic_node_type_descriptor::list:
-				case basic_node_type_descriptor::tuple:
+				case basic_value_type::number_bool:
+				case basic_value_type::number_float:
+				case basic_value_type::number_double:
+				case basic_value_type::comment:
+				case basic_value_type::list:
+				case basic_value_type::tuple:
 					cerr << "first column value type should be int or string" << endl;
 					return false;
 				default:
 					break;
 				}
 			}
-			string_view header_comment;
-			cur_cell_value = get_cell(3, column_idx);
-			if(cur_cell_value)
-			{
-				header_comment = cur_cell_value->_text;
-
-			}
+			string_view header_comment = get_cell(3, column_idx);
 			typed_headers.push_back(new typed_header(cur_type_desc, cur_header_name, header_comment));
+			if (get_header_idx(cur_header_name) != 0)
+			{
+				cerr << "duplicated header name " << cur_header_name << endl;
+			}
+			header_column_index[cur_header_name] = column_idx;
 			column_idx += 1;
 		}
 		return true;
@@ -94,32 +81,36 @@ namespace xlsx_reader{
 	}
 	void typed_worksheet::convert_cell_to_typed_value()
 	{
-		typed_cells.clear();
+		all_cell_values.clear();
 		auto value_begin_row_idx = value_begin_row();
-		for(const auto& i: row_info)
+		const auto& all_row_info = get_all_row();
+		if (value_begin_row_idx >= max_rows)
 		{
-			if(i.first < value_begin_row_idx)
+			all_cell_values.emplace_back();
+			return;
+		}
+		all_cell_values.reserve(1 + max_rows - value_begin_row_idx);
+		all_cell_values.emplace_back();
+		for (int i = value_begin_row_idx; i < all_row_info.size(); i++)
+		{
+			all_cell_values.emplace_back(all_row_info[i].size());
+		}
+		for (int i = value_begin_row(); i < all_row_info.size(); i++)
+		{
+			for (int j = 1; j < all_row_info[i].size(); j++)
 			{
-				continue;
-			}
-			map<std::uint32_t, const typed_cell*> cur_row_typed_info;
-			for(const auto& j: i.second)
-			{
-				if(!j.second)
+				string_view cur_cell = get_cell(i, j);
+				if (cur_cell.empty())
 				{
 					continue;
 				}
-				auto cur_typed_cell = typed_node_value_constructor::parse_node(typed_headers[j.first - 1]->type_desc, j.second);
-				if(!cur_typed_cell)
-				{
-					continue;
-				}
-				cur_row_typed_info[j.first - 1] = cur_typed_cell;
-				typed_cells.push_back(*cur_typed_cell);
+				all_cell_values[i - value_begin_row_idx + 1][j].~typed_value();
+				typed_value_parser::parse_value_with_type(typed_headers[j - 1]->type_desc, cur_cell, all_cell_values[i - value_begin_row_idx + 1][j]);
 			}
-			typed_row_info[i.first - value_begin_row_idx] = cur_row_typed_info;
-			_indexes[cur_row_typed_info.cbegin()->second->cur_typed_value] = i.first - value_begin_row_idx;
-
+			if (all_cell_values[i - value_begin_row_idx + 1][1].type_desc)
+			{
+				_indexes[&(all_cell_values[i - value_begin_row_idx + 1][1])] = i - value_begin_row_idx + 1;
+			}
 		}
 	}
 	typed_worksheet::typed_worksheet(const vector<cell>& all_cells, uint32_t in_sheet_id, string_view in_sheet_name, const workbook<typed_worksheet>* in_workbook)
@@ -146,14 +137,15 @@ namespace xlsx_reader{
 	}
 	uint32_t typed_worksheet::get_header_idx(string_view header_name) const
 	{
-		for (int i = 0; i < typed_headers.size(); i++)
+		auto header_iter = header_column_index.find(header_name);
+		if (header_iter == header_column_index.end())
 		{
-			if (typed_headers[i]->header_name == header_name)
-			{
-				return i + 1;
-			}
+			return 0;
 		}
-		return 0;
+		else
+		{
+			return header_iter->second;
+		}
 	}
 	optional<uint32_t> typed_worksheet::get_indexed_row(const typed_value* first_row_value) const
 	{
@@ -167,48 +159,56 @@ namespace xlsx_reader{
 			return iter->second;
 		}
 	}
-	const typed_cell* typed_worksheet::get_typed_cell(uint32_t row_idx, uint32_t column_idx) const
+	const typed_value* typed_worksheet::get_typed_cell_value(uint32_t row_idx, uint32_t column_idx) const
 	{
-		auto row_iter = typed_row_info.find(row_idx);
-		if (row_iter == typed_row_info.end())
+		if (row_idx == 0 || column_idx == 0)
 		{
 			return nullptr;
 		}
-		auto the_row = row_iter->second;
-		auto column_iter = the_row.find(column_idx);
-		if (column_iter == the_row.end())
+		if (row_idx >= all_cell_values.size())
 		{
 			return nullptr;
 		}
-		return column_iter->second;
+		if (column_idx >= all_cell_values[row_idx].size())
+		{
+			return nullptr;
+		}
+		return &all_cell_values[row_idx][column_idx];
 	}
-	optional<reference_wrapper<const map<uint32_t, const typed_cell*>>> typed_worksheet::get_ref_row(string_view sheet_name, const typed_value*  first_row_value) const
+	const vector<typed_value>& typed_worksheet::get_ref_row(string_view sheet_name, const typed_value*  first_row_value) const
 	{
 		auto current_workbook = get_workbook();
 		if(! current_workbook)
 		{
-			return nullopt;
+			return all_cell_values[0];
 		}
 		auto sheet_idx = current_workbook->get_sheet_index_by_name(sheet_name);
 		if(! sheet_idx)
 		{
-			return nullopt;
+			return all_cell_values[0];
 		}
 		const auto& the_worksheet = current_workbook->get_worksheet(sheet_idx.value());
 		auto row_index = the_worksheet.get_indexed_row(first_row_value);
 		if(!row_index)
 		{
-			return nullopt;
+			return all_cell_values[0];
 		}
-		return cref(the_worksheet.get_typed_row(row_index.value()));
+		return all_cell_values[row_index.value()];
 	}
-	const map<uint32_t, const typed_cell*>& typed_worksheet::get_typed_row(uint32_t _idx) const
+	const vector<typed_value>& typed_worksheet::get_typed_row(uint32_t _idx) const
 	{
-		return typed_row_info.find(_idx)->second;
+		if (_idx == 0 || _idx >= all_cell_values.size())
+		{
+			return all_cell_values[0];
+		}
+		else
+		{
+			return all_cell_values[_idx];
+		}
 	}
-	const std::map<std::uint32_t, std::map<std::uint32_t, const typed_cell*>>& typed_worksheet::get_all_typed_row_info() const
+	const vector<vector<typed_value>>& typed_worksheet::get_all_typed_row_info() const
 	{
-		return typed_row_info;
+		return all_cell_values;
 	}
 	bool typed_worksheet::check_header_match(const unordered_map<string_view, const typed_header*>& other_headers, string_view index_column_name, const vector<string_view>& int_ref_headers, const vector<string_view>& string_ref_headers) const
 	{
@@ -263,7 +263,7 @@ namespace xlsx_reader{
 				cout << "type desc is empty for ref int header " << int_ref_name << endl;
 				return false;
 			}
-			if(cur_header->type_desc->_type != basic_node_type_descriptor::ref_id)
+			if(cur_header->type_desc->_type != basic_value_type::ref_id)
 			{
 				cout << " not ref type for ref int header " << int_ref_name << endl;
 				return false;
@@ -295,7 +295,7 @@ namespace xlsx_reader{
 				cout << "type desc is empty for ref str header " << str_ref_name << endl;
 				return false;
 			}
-			if(cur_header->type_desc->_type != basic_node_type_descriptor::ref_id)
+			if(cur_header->type_desc->_type != basic_value_type::ref_id)
 			{
 				cout << " not ref type for ref str header " << str_ref_name << endl;
 				return false;
@@ -330,5 +330,34 @@ namespace xlsx_reader{
 		}
 		return *type_desc == *other.type_desc;
 
+	}
+	std::uint32_t typed_worksheet::memory_details() const
+	{
+		std::uint32_t result = 0;
+		uint32_t temp = 0;
+		temp = sizeof(vector<typed_header*>) + typed_headers.capacity() * sizeof(typed_header*) + typed_headers.size() * sizeof(typed_header);
+		auto parent_size = worksheet::memory_details();
+		cout << "parent worksheet size is " << parent_size << endl;
+		result += parent_size;
+		cout << "typed headers size " << temp<<endl;
+		result += temp;
+		temp = 0;
+		for (const auto& i : all_cell_values)
+		{
+			for (const auto& j : i)
+			{
+				temp += j.memory_details();
+			}
+			
+		}
+		cout << "typed_value memory " << temp << " with size " << (max_rows - value_begin_row()) * max_columns << endl;
+		result += temp;
+		temp = 0;
+		temp += 12 * _indexes.bucket_count();
+		cout << "_indexes memory " << temp << " with size " << _indexes.size() << endl;
+		result += temp;
+
+		cout << "sheet "  << _name << " memory total "<< result<<endl<<endl;
+		return result;
 	}
 }

@@ -3,8 +3,8 @@
 #include <iostream>
 #include <tuple>
 #include <vector>
-#include <xlsx_cell.h>
 #include <cmath>
+#include <charconv>
 
 namespace xlsx_reader
 {
@@ -210,5 +210,81 @@ string_view strip_blank(std::string_view input)
 	{
 		return input.substr(left, right - left);
 	}
+}
+template<>
+optional<bool> cast_string_view<bool>(string_view _text)
+{
+	if (_text == "0")
+	{
+		return false;
+	}
+	else if (_text == "1")
+	{
+		return true;
+	}
+	else
+	{
+		return nullopt;
+	}
+}
+template<>
+optional<uint32_t> cast_string_view<uint32_t>(string_view _text)
+{
+	uint32_t result;
+	if (auto[p, ec] = std::from_chars(_text.data(), _text.data() + _text.size(), result); ec == std::errc())
+	{
+		return result;
+	}
+	return nullopt;
+}
+template<>
+optional<int> cast_string_view<int>(string_view _text)
+{
+	int result;
+	if (auto[p, ec] = std::from_chars(_text.data(), _text.data() + _text.size(), result); ec == std::errc())
+	{
+		return result;
+	}
+	return nullopt;
+}
+template<>
+optional<uint64_t> cast_string_view<uint64_t>(string_view _text)
+{
+	uint64_t result;
+	if (auto[p, ec] = std::from_chars(_text.data(), _text.data() + _text.size(), result); ec == std::errc())
+	{
+		return result;
+	}
+	return nullopt;
+}
+template<>
+optional<int64_t> cast_string_view<int64_t>(string_view _text)
+{
+	int64_t result;
+	if (auto[p, ec] = std::from_chars(_text.data(), _text.data() + _text.size(), result); ec == std::errc())
+	{
+		return result;
+	}
+	return nullopt;
+}
+template<>
+optional<float> cast_string_view<float>(string_view _text)
+{
+	float result;
+	if (auto[p, ec] = std::from_chars(_text.data(), _text.data() + _text.size(), result); ec == std::errc())
+	{
+		return result;
+	}
+	return nullopt;
+}
+template<>
+optional<double> cast_string_view<double>(string_view _text)
+{
+	double result;
+	if (auto[p, ec] = std::from_chars(_text.data(), _text.data() + _text.size(), result); ec == std::errc())
+	{
+		return result;
+	}
+	return nullopt;
 }
 }

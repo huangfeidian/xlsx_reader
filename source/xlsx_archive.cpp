@@ -21,6 +21,7 @@ namespace xlsx_reader
 	using namespace std::experimental::filesystem;
 	archive::archive(const string& file_name)
 	{
+		cache_flag = false;
 		path file_path(file_name);
 		std::ifstream input_file_stream(file_path, std::ios::binary);
 		input_file_stream.seekg(0, std::ios::end);
@@ -29,7 +30,7 @@ namespace xlsx_reader
 		input_file_stream.seekg(0, std::ios::beg);
 		cur_all_content.assign(std::istreambuf_iterator<char>(input_file_stream), std::istreambuf_iterator<char>());
 		std::cout << "miniz version " << MZ_VERSION << std::endl;
-		std::cout << "string size " << cur_all_content.size() << "file path " << current_path() << std::endl;
+		std::cout << "string size " << cur_all_content.size() << " file path " << current_path() << std::endl;
 		mz_zip_archive cur_archive;
 
 		memset(&cur_archive, 0, sizeof(cur_archive));
@@ -53,9 +54,9 @@ namespace xlsx_reader
 				clear_resource();
 				return;
 			}
-			std::cout << " Filename " << cur_file_stat.m_filename << "comment " << cur_file_stat.m_comment <<
-				" uncompressed size " << cur_file_stat.m_uncomp_size << " compressed size " << cur_file_stat.m_comp_size
-				<< " is dir " << mz_zip_reader_is_file_a_directory(&cur_archive, i) << std::endl;
+			//std::cout << " Filename " << cur_file_stat.m_filename << "comment " << cur_file_stat.m_comment <<
+			//	" uncompressed size " << cur_file_stat.m_uncomp_size << " compressed size " << cur_file_stat.m_comp_size
+			//	<< " is dir " << mz_zip_reader_is_file_a_directory(&cur_archive, i) << std::endl;
 
 			size_t cur_uncom_size = 0;
 			void* p = mz_zip_reader_extract_file_to_heap(&cur_archive, cur_file_stat.m_filename, &cur_uncom_size, 0);
@@ -67,36 +68,53 @@ namespace xlsx_reader
 				return;
 			}
 			valid_flag = true;
-			std::cout << "success extracted file " << cur_file_stat.m_filename << std::endl;
+			//std::cout << "success extracted file " << cur_file_stat.m_filename << std::endl;
 			char* new_p = (char*)p;
 			archive_file_buffers.push_back(p);
 			archive_content[string(cur_file_stat.m_filename)] = string_view(static_cast<char*>(p), cur_file_stat.m_uncomp_size);
 		}
 		mz_zip_reader_end(&cur_archive);
 	}
-	const XMLDocument* archive::get_xml_document(const string& doc_path)
+	shared_ptr<XMLDocument> archive::get_xml_document(const string& doc_path)
 	{
-		auto doc_iter = xml_content.find(doc_path);
-		if(doc_iter != xml_content.end())
+		if (cache_flag)
 		{
-			return doc_iter->second.get();
+			auto doc_iter = xml_content.find(doc_path);
+			if (doc_iter != xml_content.end())
+			{
+				return doc_iter->second;
+			}
+			else
+			{
+				auto content_iter = archive_content.find(doc_path);
+				if (content_iter != archive_content.end())
+				{
+					auto current_ptr = make_shared<XMLDocument>();
+					xml_content[doc_path] = current_ptr;
+					current_ptr->Parse(content_iter->second.data(), content_iter->second.size());
+					return current_ptr;
+				}
+				else
+				{
+					return nullptr;
+				}
+			}
 		}
 		else
 		{
 			auto content_iter = archive_content.find(doc_path);
-			if(content_iter != archive_content.end())
+			if (content_iter != archive_content.end())
 			{
-				auto current_unique_ptr = make_unique<XMLDocument>();
-				auto current_raw_ptr = current_unique_ptr.get();
-				xml_content[doc_path] = move(current_unique_ptr);
-				current_raw_ptr->Parse(content_iter->second.data(), content_iter->second.size());
-				return current_raw_ptr;
+				auto current_ptr = make_shared<XMLDocument>();
+				current_ptr->Parse(content_iter->second.data(), content_iter->second.size());
+				return current_ptr;
 			}
 			else
 			{
 				return nullptr;
 			}
 		}
+		
 	}
 	vector<sheet_desc> archive::get_all_sheet_relation()
 	{
@@ -117,11 +135,11 @@ namespace xlsx_reader
 		return all_sheets;
 	}
 
-	vector<string_view> archive::get_shared_string()
+	vector<string> archive::get_shared_string()
 	{
 		auto shared_string_table_path = "xl/sharedStrings.xml";
 		auto cur_shared_doc = get_xml_document(shared_string_table_path);
-		vector<string_view> all_share_strings;
+		vector<string> all_share_strings;
 		auto share_total_node = cur_shared_doc->FirstChildElement("sst");
 		auto share_string_begin = share_total_node->FirstChildElement("si");
 		while (share_string_begin)
@@ -134,11 +152,27 @@ namespace xlsx_reader
 			}
 			else
 			{
-				all_share_strings.emplace_back(""sv);
+				all_share_strings.emplace_back(string());
 			}
 			share_string_begin = share_string_begin->NextSiblingElement("si");
 		}
 		return all_share_strings;
+	}
+	bool archive::get_cache_mode() const
+	{
+		return cache_flag;
+	}
+	void archive::set_cache_mode(bool enable_cache)
+	{
+		if (cache_flag == enable_cache)
+		{
+			return;
+		}
+		cache_flag = enable_cache;
+		if (!cache_flag)
+		{
+			xml_content.clear();
+		}
 	}
 	void archive::clear_resource()
 	{
@@ -147,6 +181,7 @@ namespace xlsx_reader
 			free(i);
 		}
 		archive_file_buffers.clear();
+		xml_content.clear();
 	}
 	bool archive::is_valid() const
 	{

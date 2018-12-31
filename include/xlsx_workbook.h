@@ -11,9 +11,26 @@ namespace xlsx_reader
 	public:
 		std::vector<std::unique_ptr<worksheet_t>> _worksheets;
 		std::vector<sheet_desc> sheet_relations; 
-		std::vector<std::string_view> shared_string;
+		
 	private:
+		std::vector<std::string> shared_string;
+		std::unordered_map<std::string, std::uint32_t> shared_string_indexes;
 		std::unordered_map<std::string_view, std::uint32_t> sheets_name_map;
+		std::uint32_t get_index_for_string(const std::string& in_str)
+		{
+			auto iter = shared_string_indexes.find(in_str);
+			if (iter != shared_string_indexes.end())
+			{
+				return iter->second;
+			}
+			else
+			{
+				shared_string.push_back(in_str);
+				shared_string_indexes[in_str] = shared_string.size() - 1;
+				return shared_string.size() - 1;
+			}
+		}
+		
 	public:
 		std::optional<std::uint32_t> get_sheet_index_by_name(std::string_view sheet_name) const
 		{
@@ -40,14 +57,40 @@ namespace xlsx_reader
 		{
 			return workbook_name;
 		}
+		std::string_view get_shared_string(std::uint32_t ss_idx) const
+		{
+			if (ss_idx >= shared_string.size())
+			{
+				return std::string_view();
+			}
+			else
+			{
+				return std::string_view(shared_string[ss_idx]);
+			}
+		}
+
 		workbook(std::shared_ptr<archive> in_archive)
 		{
 			archive_content = in_archive;
 		
-			shared_string = in_archive->get_shared_string();
-
+			auto in_shared_string = in_archive->get_shared_string();
+			for (int i = 0; i < in_shared_string.size(); i++)
+			{
+				auto cur_string_view = strip_blank(std::string_view(in_shared_string[i]));
+				std::string cur_string(cur_string_view);
+				shared_string.push_back(cur_string);
+				shared_string_indexes[shared_string[i]] = i;
+			}
 			sheet_relations = in_archive->get_all_sheet_relation();
+			// we should load all shared strings here incase any relocation of the shared_string vector
+			// invalidate the string_views that ref the shared string
+			for (int i = 0; i < sheet_relations.size(); i++)
+			{
+				get_cells_for_sheet(i + 1);
+			}
+			shared_string.shrink_to_fit();
 
+			// from now the shared_string begins to function
 			for(int i = 0; i < sheet_relations.size(); i++)
 			{
 				auto cur_worksheet = new worksheet_t(get_cells_for_sheet(i + 1), get<1>(sheet_relations[i]), get<0>(sheet_relations[i]), this);
@@ -68,9 +111,27 @@ namespace xlsx_reader
 			}
 			return output_stream;
 		}
+		std::uint32_t memory_details() const
+		{
+			std::uint32_t result = 0;
+			for (const auto& i : _worksheets)
+			{
+				if (i)
+				{
+					result += i->memory_details();
+				}
+			}
+			std::cout << "_worksheets memory " << result << std::endl;
+			std::uint32_t ss_size = 0;
+			ss_size = shared_string.capacity() * sizeof(std::string);
+			std::cout << "shared_strings memory " << ss_size << "with size " << shared_string.size() << std::endl;
+			result += ss_size;
+			std::cout << "workbook " << workbook_name << "memory " << result << std::endl;
+			return result;
+		}
 	protected:
 		std::shared_ptr<archive> archive_content;
-		const tinyxml2::XMLDocument* get_sheet_xml(std::uint32_t sheet_idx) const
+		std::shared_ptr<tinyxml2::XMLDocument> get_sheet_xml(std::uint32_t sheet_idx) const
 		{
 			auto sheet_path = "xl/worksheets/sheet" + to_string(sheet_idx) + ".xml";
 			return archive_content->get_xml_document(sheet_path);
@@ -78,9 +139,10 @@ namespace xlsx_reader
 		
 		void after_load_process()
 		{
-			cout<<"Workbook "<<workbook_name<<" total sheets "<<_worksheets.size()<<endl;
+			cout<<"Workbook "<<workbook_name<<" total sheets "<<_worksheets.size()<<std::endl;
 		}
 		std::unordered_map<std::uint32_t, std::vector<cell>> all_cells;
+
 		const std::vector<cell>& get_cells_for_sheet(std::uint32_t sheet_idx)
 		{
 			auto cache_iter = all_cells.find(sheet_idx);
@@ -106,14 +168,21 @@ namespace xlsx_reader
 					{
 						break;
 					}
-					auto current_value = string_view(cell_node->FirstChildElement("v")->GetText());
+
+					std::string_view current_value = cell_node->FirstChildElement("v")->GetText();
+					current_value = strip_blank(current_value);
 					auto type_attr = cell_node->Attribute("t");
-					if(type_attr && string(type_attr) == "s")
+					std::uint32_t ss_idx = 0;
+					if(type_attr && *type_attr == 's')
 					{
-						current_value = shared_string[stoi(string(current_value))];
+						ss_idx = stoi(string(current_value));
+					}
+					else
+					{
+						ss_idx = get_index_for_string(std::string(current_value));
 					}
 					cell_node = cell_node->NextSiblingElement("c");
-					result.emplace_back(row_index, col_idx, strip_blank(current_value));
+					result.emplace_back(row_index, col_idx, ss_idx);
 
 				}
 				row_node = row_node->NextSiblingElement("row");

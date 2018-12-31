@@ -1,5 +1,4 @@
 ﻿#pragma once
-#include "xlsx_cell.h"
 #include <string_view>
 #include <cstdint>
 #include <optional>
@@ -7,6 +6,7 @@
 #include <variant>
 #include <string>
 #include <vector>
+#include "xlsx_types_forward.h"
 
 namespace xlsx_reader
 {
@@ -22,10 +22,10 @@ namespace xlsx_reader
 	{
 		// 用来处理类型转换
 	};
-	enum class basic_node_type_descriptor
+	enum class basic_value_type
 	{
 		comment,//COMMENT
-		string,//STRING
+		string,//shared_string table
 		number_bool,//BOOL
 		number_u32,//UINT
 		number_32,//INT
@@ -45,15 +45,15 @@ namespace xlsx_reader
 		using ref_detail_t = std::tuple<std::string_view, std::string_view, std::string_view>;//这个字段只有在引用类型才会用到 workbook worksheet ref_type
 		using list_detail_t = std::tuple<typed_node_type_descriptor*, std::uint32_t, char>;//这个字段只有在list类型的情况才会被使里面存的是list的成员信息 第二个分量是0的时候代表无限长度 detail_type length seperator
 		using tuple_detail_t = std::pair<std::vector<typed_node_type_descriptor*>, char>;//这个字段只有在复合类型的情况才会被使里面存的是tuple的成员信息 <type1, type2, type3> seperator
-		basic_node_type_descriptor _type;
+		basic_value_type _type;
 		std::variant<ref_detail_t, tuple_detail_t, list_detail_t> _type_detail;
 		typed_node_type_descriptor();
-		typed_node_type_descriptor(basic_node_type_descriptor in_type);
+		typed_node_type_descriptor(basic_value_type in_type);
 		typed_node_type_descriptor(const tuple_detail_t& tuple_detail);
 		typed_node_type_descriptor(const list_detail_t& list_detail);
 		typed_node_type_descriptor(const ref_detail_t& ref_detail);
 		friend std::ostream& operator<<(std::ostream& output_stream, const typed_node_type_descriptor& cur_node);
-		static const typed_node_type_descriptor* get_basic_type_desc(basic_node_type_descriptor in_type);
+		static const typed_node_type_descriptor* get_basic_type_desc(basic_value_type in_type);
 		
 		friend bool operator==(const typed_node_type_descriptor& cur, const typed_node_type_descriptor& other);
 		friend bool operator!=(const typed_node_type_descriptor& cur, const typed_node_type_descriptor& other);
@@ -67,7 +67,6 @@ namespace xlsx_reader
 	{
 	public:
 		const typed_node_type_descriptor* type_desc;
-		std::string_view v_text;
 		union {
 			bool v_bool;
 			std::uint32_t v_uint32; 
@@ -75,7 +74,8 @@ namespace xlsx_reader
 			std::uint64_t v_uint64;
 			std::int64_t v_int64;
 			float v_float;
-			double v_double; //for time datetime date double
+			double v_double;
+			std::string_view v_text;
 		};
 		std::vector<typed_value*> v_list;
 		typed_value();
@@ -99,6 +99,7 @@ namespace xlsx_reader
 		std::optional<T> expect_value() const;
 		template <typename... args>
 		std::optional<std::tuple<args ...>> expect_tuple_value() const;
+		std::uint32_t memory_details() const;
 		~typed_value();
 	private:
 		template<typename T> struct deduce_type{};
@@ -197,6 +198,7 @@ namespace xlsx_reader
 		typed_cell& operator=(const typed_cell& other) = default;
 		template <typename T> 
 		std::optional<T> expect_value() const;
+		std::uint32_t memory_details() const;
 	};
 	template <typename T>
 	std::optional<T> typed_cell::expect_value() const
@@ -210,27 +212,43 @@ namespace xlsx_reader
 			return cur_typed_value->expect_value<T>();
 		}
 	}
-	class typed_node_value_constructor
+
+	class typed_value_parser
 	{
 	public:
 		const typed_node_type_descriptor* type_desc;
-		typed_node_value_constructor(std::string_view type_desc_text);
-		const typed_cell* match_node(const cell* in_cell_value);
+		typed_value_parser(std::string_view text);
+		const typed_value* match_node(std::string_view text);
+		bool match_node(std::string_view text, typed_value& result);
 
 		static typed_node_type_descriptor* parse_type(std::string_view type_string);
+
 		static typed_value* parse_value_with_type(const typed_node_type_descriptor* node_type, std::string_view text);
-		static typed_cell* parse_node(const typed_node_type_descriptor* type_desc, const cell* in_cell_value);
+		static bool parse_value_with_type(const typed_node_type_descriptor* type_desc, std::string_view text, typed_value& result);
+
 		template <typename T>
-		static typed_cell* prase_node_with_number(const typed_node_type_descriptor* type_desc, const cell* in_cell_value)
+		static typed_value* prase_node_with_number(std::string_view text)
 		{
-			std::optional<T> result_opt = in_cell_value->expect_value<T>();
-			if(!result_opt)
+			std::optional<T> result_opt = cast_string_view<T>(text);
+			if (!result_opt)
 			{
 				return nullptr;
 			}
-			return new typed_cell(in_cell_value->_row, in_cell_value->_column, new typed_value(result_opt.value()));
+			return new typed_value(result_opt.value());
 		}
-
+		template <typename T>
+		static bool prase_node_with_number(std::string_view text, typed_value& result)
+		{
+			std::optional<T> result_opt = cast_string_view<T>(text);
+			if (!result_opt)
+			{
+				return false;
+			}
+			new(&result) typed_value(result_opt.value());
+			return true;
+		}
+	private:
+		static bool parse_value_with_address(const typed_node_type_descriptor* typed_desc, std::string_view text, typed_value* result);
 	};
 
 }

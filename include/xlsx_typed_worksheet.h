@@ -23,8 +23,8 @@ namespace xlsx_reader{
 		// 这里我们默认第一行是id 第二行是类型 第三行是注释 第四行开始是数据
 	public:
 		typed_worksheet(const std::vector<cell>& all_cells, std::uint32_t in_sheet_id, std::string_view in_sheet_name, const workbook<typed_worksheet>* in_workbook);
-		const std::map<std::uint32_t, const typed_cell*>& get_typed_row(std::uint32_t) const;
-		const typed_cell* get_typed_cell(std::uint32_t row_idx, std::uint32_t column_idx) const;
+		const std::vector<typed_value>& get_typed_row(std::uint32_t) const;
+		const typed_value* get_typed_cell_value(std::uint32_t row_idx, std::uint32_t column_idx) const;
 		friend std::ostream& operator<<(std::ostream& output_stream, const typed_worksheet& in_worksheet);
 		
 		template <typename T> friend class workbook;
@@ -36,20 +36,21 @@ namespace xlsx_reader{
 		std::uint32_t get_header_idx(std::string_view header_name) const;
 		// 根据第一列的值来获取所属的行
 		std::optional<std::uint32_t> get_indexed_row(const typed_value* first_row_value) const;
-		std::optional<std::reference_wrapper<const std::map<std::uint32_t, const typed_cell*>>> get_ref_row(std::string_view sheet_name, const typed_value* first_row_value) const;
+		const std::vector<typed_value>& get_ref_row(std::string_view sheet_name, const typed_value* first_row_value) const;
 
-		const std::map<std::uint32_t, std::map<std::uint32_t, const typed_cell*>>& get_all_typed_row_info() const;
+		const std::vector<std::vector<typed_value>>& get_all_typed_row_info() const;
 
 		bool check_header_match(const std::unordered_map<std::string_view, const typed_header*>& other_headers, std::string_view index_column_name, const std::vector<std::string_view>& int_ref_headers, const std::vector<std::string_view>& string_ref_headers) const;
+	public:
 		std::vector<const typed_header*> typed_headers;
-		std::map<std::uint32_t, std::map<std::uint32_t, const typed_cell*>> typed_row_info;
-		std::vector<typed_cell> typed_cells;
 		std::unordered_map<const typed_value*, std::uint32_t, typed_value_hash, typed_value_ptr_equal> _indexes;
 		std::unordered_map<std::string_view, std::uint32_t> header_column_index;
 		void after_load_process();
 		typed_worksheet(const typed_worksheet& other) = delete;
 		typed_worksheet& operator=(const typed_worksheet& other) = delete;
+		std::uint32_t memory_details() const;
 	private:
+		std::vector<std::vector<typed_value>> all_cell_values;
 		void convert_cell_to_typed_value();
 		bool convert_typed_header();
 		virtual int value_begin_row() const; // 获取数据开始的行号

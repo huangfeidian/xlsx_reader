@@ -3,7 +3,6 @@
 #include <xlsx_utils.h>
 #include <cmath>
 #include <algorithm>
-#include <xlsx_cell.h>
 #include <iostream>
 
 namespace xlsx_reader {
@@ -22,36 +21,50 @@ namespace xlsx_reader {
 		max_columns = 0;
 		for(const auto& one_cell : _cells)
 		{
-			uint32_t current_row_id = one_cell.get_row();
+			uint32_t current_row_id = get<0>(one_cell);
 			max_rows = max(current_row_id, max_rows);
-			uint32_t current_column_id = one_cell.get_column();
+			uint32_t current_column_id = get<1>(one_cell);
 			max_columns = max(max_columns, current_column_id);
-			auto& cur_row_info = row_info[current_row_id];
-			cur_row_info[current_column_id] = &one_cell;
+		}
+		row_info.reserve(max_rows + 1);
+		row_info.emplace_back();
+		for (int i = 0; i < max_rows; i++)
+		{
+			row_info.emplace_back(max_columns + 1);
+		}
+		for (const auto& one_cell : _cells)
+		{
+			uint32_t current_row_id = get<0>(one_cell);
+			uint32_t current_column_id = get<1>(one_cell);
+			uint32_t current_ss_idx = get<2>(one_cell);
+			row_info[current_row_id][current_column_id] = current_ss_idx;
 		}
 		after_load_process();
 	}
-	const map<uint32_t, const cell*>& worksheet::get_row(uint32_t row_idx) const
+	const vector<uint32_t>& worksheet::get_row(uint32_t row_idx) const
 	{
-		return row_info.find(row_idx)->second;
+		return row_info[row_idx];
 	}
-	const cell* worksheet::get_cell(uint32_t row_idx, uint32_t column_idx) const
+	const vector<vector<uint32_t>>& worksheet::get_all_row()const
 	{
-		auto row_iter = row_info.find(row_idx);
-		if(row_iter == row_info.end())
-		{
-			return nullptr;
-		}
-		auto column_iter = row_iter->second.find(column_idx);
-		if(column_iter == row_iter->second.end())
-		{
-			return nullptr;
-		}
-		else
-		{
-			return column_iter->second;
-		}
+		return row_info;
 	}
+	string_view worksheet::get_cell(uint32_t row_idx, uint32_t column_idx) const
+	{
+		if (row_idx > max_rows)
+		{
+			return string_view();
+		}
+		if (column_idx > max_columns)
+		{
+			return string_view();
+		}
+
+		auto ss_idx = row_info[row_idx][column_idx];
+		auto the_workbook = get_workbook();
+		return the_workbook->get_shared_string(ss_idx);
+	}
+
 	uint32_t worksheet::get_max_row() const
 	{
 		return max_rows;
@@ -67,12 +80,13 @@ namespace xlsx_reader {
 	ostream& operator<<(ostream& output_stream, const worksheet& in_worksheet)
 	{
 		output_stream<<"worksheet name: "<< in_worksheet.get_name()<<", sheet_id: "<<in_worksheet._sheet_id<<endl;
-		for(const auto& one_row: in_worksheet.row_info)
+		const auto& all_row_info = in_worksheet.get_all_row();
+		for (int i = 1; i < all_row_info.size(); i++)
 		{
-			output_stream<<"row "<<one_row.first<<" has cells "<< one_row.second.size()<<endl;
-			for(const auto& one_cell: one_row.second)
+			output_stream << "row " << i << " has cells " << all_row_info[i].size() - 1 << endl;
+			for (int j = 1; j < all_row_info[i].size(); j++)
 			{
-				output_stream<<*(one_cell.second)<<endl;
+				output_stream << "cell at row " << i << " column " << j << " with value " << in_worksheet.get_cell(i, j) << endl;
 			}
 		}
 		return output_stream;
@@ -88,5 +102,11 @@ namespace xlsx_reader {
 	const workbook<worksheet>* worksheet::get_workbook() const
 	{
 		return reinterpret_cast<const workbook<worksheet>*>(_workbook);
+	}
+	uint32_t worksheet::memory_details() const
+	{
+		uint32_t result = sizeof(uint32_t) * max_columns * max_rows;
+		cout << "sheet "<<_name<<"has row " << max_rows<<" column  "<< max_columns<< " total_memory " << result << endl;
+		return result;
 	}
 };
