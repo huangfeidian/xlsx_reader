@@ -154,22 +154,25 @@ namespace xlsx_reader
 	{
 		json new_j;
 		json header_array = json::array();
-		for (const auto& i : cur_worksheet.typed_headers)
+		const auto& typed_headers = cur_worksheet.get_typed_headers();
+		for (int i = 1; i < typed_headers.size(); i++)
 		{
-			header_array.push_back(json(*i));
+			header_array.push_back(json(*typed_headers[i]));
 		}
+
 		new_j["headers"] = header_array;
 		new_j["sheet_id"] = cur_worksheet._sheet_id;
 		new_j["sheet_name"] = cur_worksheet._name;
 		json row_matrix;
 		const auto& all_row_info = cur_worksheet.get_all_typed_row_info();
+		
 		for (int i = 1; i < all_row_info.size(); i++)
 		{
 			auto cur_row_index = i;
 			json row_j = json::object();
 			for (int j = 1; j < all_row_info[i].size(); j++)
 			{
-				row_j[std::string((cur_worksheet.typed_headers[j - 1])->header_name)] = json(all_row_info[i][j]);
+				row_j[std::string((typed_headers[j])->header_name)] = json(all_row_info[i][j]);
 			}
 			row_matrix[to_string(cur_row_index)] = row_j;
 		}
