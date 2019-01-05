@@ -611,24 +611,24 @@ namespace xlsx_reader{
 	
 	const typed_node_type_descriptor* typed_node_type_descriptor::get_basic_type_desc(basic_value_type in_type)
 	{
-		static vector<typed_node_type_descriptor> result = {
-			typed_node_type_descriptor(basic_value_type::comment),
-			typed_node_type_descriptor(basic_value_type::string),
-			typed_node_type_descriptor(basic_value_type::number_bool),
-			typed_node_type_descriptor(basic_value_type::number_u32),
-			typed_node_type_descriptor(basic_value_type::number_32),
-			typed_node_type_descriptor(basic_value_type::number_u64),
-			typed_node_type_descriptor(basic_value_type::number_64),
-			typed_node_type_descriptor(basic_value_type::number_float),
-			typed_node_type_descriptor(basic_value_type::number_double),
+		static std::vector<typed_node_type_descriptor*> result = {
+			new typed_node_type_descriptor(basic_value_type::comment),
+			new typed_node_type_descriptor(basic_value_type::string),
+			new typed_node_type_descriptor(basic_value_type::number_bool),
+			new typed_node_type_descriptor(basic_value_type::number_u32),
+			new typed_node_type_descriptor(basic_value_type::number_32),
+			new typed_node_type_descriptor(basic_value_type::number_u64),
+			new typed_node_type_descriptor(basic_value_type::number_64),
+			new typed_node_type_descriptor(basic_value_type::number_float),
+			new typed_node_type_descriptor(basic_value_type::number_double),
 		};
 		if (static_cast<uint32_t>(in_type) > static_cast<uint32_t>(basic_value_type::number_double))
 		{
-			return &result[0];
+			return result[0];
 		}
 		else
 		{
-			return &result[static_cast<uint32_t>(in_type)];
+			return result[static_cast<uint32_t>(in_type)];
 		}
 	}
 
@@ -873,14 +873,20 @@ namespace xlsx_reader{
 
 	typed_value::~typed_value()
 	{
-		for(auto i: v_list)
+		
+	}
+	void typed_value::cleaup_recursive()
+	{
+		for (auto i : v_list)
 		{
-			if(i)
+			if (i)
 			{
-				i->~typed_value();
+				i->cleaup_recursive();
+				delete i;
 			}
 		}
 		v_list.clear();
+		type_desc = nullptr;
 	}
 	
 	template <>

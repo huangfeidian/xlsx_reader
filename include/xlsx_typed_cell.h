@@ -60,6 +60,8 @@ namespace xlsx_reader
 		std::optional<list_detail_t> get_list_detail_t() const;
 		std::optional<ref_detail_t> get_ref_detail_t() const;
 		std::optional<tuple_detail_t> get_tuple_detail_t() const;
+		typed_node_type_descriptor(const typed_node_type_descriptor& other) = delete;
+		typed_node_type_descriptor& operator=(const typed_node_type_descriptor& other) = delete;
 		~typed_node_type_descriptor();
 	};
 
@@ -101,6 +103,7 @@ namespace xlsx_reader
 		std::optional<std::tuple<args ...>> expect_tuple_value() const;
 		std::uint32_t memory_details() const;
 		~typed_value();
+		void cleaup_recursive();
 	private:
 		template<typename T> struct deduce_type{};
 		template <typename T>
@@ -113,6 +116,7 @@ namespace xlsx_reader
 		{
 			return expect_tuple_value<args...>();
 		}
+		
 	};
 
 	template <>
@@ -174,6 +178,10 @@ namespace xlsx_reader
 	template <typename T>
 	std::optional<T> typed_value::expect_value() const
 	{
+		if (!type_desc)
+		{
+			return std::nullopt;
+		}
 		return expect_value_dispatch(deduce_type<T>());
 	}
 
