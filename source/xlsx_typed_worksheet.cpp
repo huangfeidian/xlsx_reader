@@ -18,6 +18,19 @@ namespace xlsx_reader{
 		return output_stream;
 	}
 
+	void typed_header::cleanup_resource()
+	{
+		if (!type_desc)
+		{
+			return;
+		}
+		if (type_desc->_type <= basic_value_type::number_double)
+		{
+			return;
+		}
+		delete type_desc;
+		type_desc = nullptr;
+	}
 	bool typed_worksheet::convert_typed_header()
 	{
 		typed_headers.clear();
@@ -150,6 +163,7 @@ namespace xlsx_reader{
 		{
 			if (i)
 			{
+				const_cast<typed_header*>(i)->cleanup_resource();
 				delete i;
 			}
 		}
@@ -157,7 +171,7 @@ namespace xlsx_reader{
 		{
 			for (auto& j : i)
 			{
-				j.cleaup_recursive();
+				j.cleanup_resource();
 			}
 		}
 

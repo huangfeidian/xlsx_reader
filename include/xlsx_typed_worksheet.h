@@ -16,6 +16,7 @@ namespace xlsx_reader{
 		friend std::ostream& operator<<(std::ostream& output_stream, const typed_header& in_typed_header);
 		
 		bool operator==(const typed_header& other) const;
+		void cleanup_resource();
 	};
 	template<typename... args, std::size_t... arg_idx>
 	std::tuple<std::optional<args>...> try_convert_row_impl(const std::vector<std::uint32_t>& column_index, const std::vector<typed_value>& row_value, std::index_sequence<arg_idx...>)

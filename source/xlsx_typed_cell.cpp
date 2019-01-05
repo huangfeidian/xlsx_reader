@@ -875,13 +875,13 @@ namespace xlsx_reader{
 	{
 		
 	}
-	void typed_value::cleaup_recursive()
+	void typed_value::cleanup_resource()
 	{
 		for (auto i : v_list)
 		{
 			if (i)
 			{
-				i->cleaup_recursive();
+				i->cleanup_resource();
 				delete i;
 			}
 		}

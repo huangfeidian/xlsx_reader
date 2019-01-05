@@ -103,7 +103,7 @@ namespace xlsx_reader
 		std::optional<std::tuple<args ...>> expect_tuple_value() const;
 		std::uint32_t memory_details() const;
 		~typed_value();
-		void cleaup_recursive();
+		void cleanup_resource();
 	private:
 		template<typename T> struct deduce_type{};
 		template <typename T>
