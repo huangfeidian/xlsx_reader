@@ -280,7 +280,6 @@ namespace xlsx_reader{
 				cout << " cant find header " << i.second->header_name << endl;
 				return false;
 			}
-			header_idx--;
 			if (header_idx >= typed_headers.size())
 			{
 				cout << " cant find header " << i.second->header_name << endl;
@@ -338,7 +337,6 @@ namespace xlsx_reader{
 				cout << "cant find ref str header " << str_ref_name << endl;
 				return false;
 			}
-			header_idx--;
 			auto cur_header = typed_headers[header_idx];
 			if(!cur_header || !cur_header->type_desc)
 			{
