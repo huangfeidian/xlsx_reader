@@ -1,5 +1,6 @@
 ﻿#include <xlsx_archive.h>
 #include <xlsx_utils.h>
+#include <string_table.h>
 
 #include <unordered_map>
 #include <filesystem>
@@ -135,24 +136,25 @@ namespace xlsx_reader
 		return all_sheets;
 	}
 
-	vector<string> archive::get_shared_string()
+	vector<string_view> archive::get_shared_string()
 	{
 		auto shared_string_table_path = "xl/sharedStrings.xml";
 		auto cur_shared_doc = get_xml_document(shared_string_table_path);
-		vector<string> all_share_strings;
+		auto& the_string_table = string_table::get_instance();
 		auto share_total_node = cur_shared_doc->FirstChildElement("sst");
 		auto share_string_begin = share_total_node->FirstChildElement("si");
+		std::vector<std::string_view> all_share_strings;
 		while (share_string_begin)
 		{
 			auto current_value = share_string_begin->FirstChildElement("t")->GetText();
 			// cout << "value " << current_value << " has type " << current_type << endl;
 			if (current_value)
 			{
-				all_share_strings.emplace_back(current_value);
+				all_share_strings.push_back(the_string_table.add(std::string_view(current_value)));
 			}
 			else
 			{
-				all_share_strings.emplace_back(string());
+				all_share_strings.push_back(the_string_table.add(std::string_view()));
 			}
 			share_string_begin = share_string_begin->NextSiblingElement("si");
 		}
