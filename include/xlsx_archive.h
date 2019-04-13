@@ -22,7 +22,7 @@ namespace xlsx_reader
 		archive(const archive& rhs) = delete;
 		std::shared_ptr<tinyxml2::XMLDocument> get_xml_document(const std::string& doc_path);
 		std::vector<sheet_desc> get_all_sheet_relation();
-		std::vector<std::string_view> get_shared_string(); 
+		std::vector<std::string> get_shared_string(); 
 		void clear_xml_document_cache();
 		bool is_valid() const;
 		bool get_cache_mode() const;

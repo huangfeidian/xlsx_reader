@@ -1,4 +1,4 @@
-#include <string_table.h>
+﻿#include <string_table.h>
 #include <cstdlib>
 
 namespace xlsx_reader
@@ -17,7 +17,7 @@ namespace xlsx_reader
 		}
 		for (const auto& one_long_str : long_strings)
 		{
-			if (source_str.data() >= one_long_str.data() && source_str.data() < one_long_str.data() + one_long_str.size)
+			if (source_str.data() >= one_long_str.data() && source_str.data() < one_long_str.data() + one_long_str.size())
 			{
 				return true;
 			}
