@@ -2,7 +2,6 @@
 #include "xlsx_worksheet.h"
 #include <memory>
 #include "xlsx_archive.h"
-#include "string_table.h"
 #include <optional>
 namespace xlsx_reader
 {
@@ -15,7 +14,6 @@ namespace xlsx_reader
 		
 	private:
 		std::vector<std::string> shared_string;
-		string_table temp_strings;
 		std::unordered_map<std::string, std::uint32_t> shared_string_indexes;
 		std::unordered_map<std::string_view, std::uint32_t> sheets_name_map;
 		std::uint32_t get_index_for_string(const std::string& in_str)
