@@ -9,7 +9,7 @@
 #include <iostream>
 extern "C"
 {
-#include <miniz/miniz_zip.h>
+#include <miniz/miniz.h>
 }
 
 
