@@ -4,7 +4,7 @@
 #include "xlsx_workbook.h"
 #include <functional>
 #include <unordered_map>
-namespace xlsx_reader{
+namespace spiritsaway::xlsx_reader{
 	
 	class typed_header
 	{

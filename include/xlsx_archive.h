@@ -5,7 +5,7 @@
 #include <string>
 #include <memory>
 #include <vector>
-namespace xlsx_reader
+namespace spiritsaway::xlsx_reader
 {
 	class archive
 	{

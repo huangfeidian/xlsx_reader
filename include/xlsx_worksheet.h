@@ -6,7 +6,7 @@
 #include <string_view>
 #include "xlsx_types_forward.h"
 
-namespace xlsx_reader
+namespace spiritsaway::xlsx_reader
 {
 	class worksheet
 	{

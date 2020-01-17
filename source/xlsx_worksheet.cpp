@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <iostream>
 
-namespace xlsx_reader {
+namespace spiritsaway::xlsx_reader {
 	using namespace std;
 
 	worksheet::worksheet(const vector<cell>& in_all_cells, uint32_t in_sheet_id, string_view in_sheet_name, const workbook<worksheet>* in_workbook)

@@ -6,7 +6,7 @@
 #include <cmath>
 #include <charconv>
 
-namespace xlsx_reader
+namespace spiritsaway::xlsx_reader
 {
 
 using namespace std;

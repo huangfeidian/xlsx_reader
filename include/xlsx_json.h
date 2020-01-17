@@ -5,7 +5,7 @@
 #include "xlsx_workbook.h"
 #include "xlsx_worksheet.h"
 #include "xlsx_typed_worksheet.h"
-namespace xlsx_reader
+namespace spiritsaway::xlsx_reader
 {
 	using json = nlohmann::json;
 	using namespace std;

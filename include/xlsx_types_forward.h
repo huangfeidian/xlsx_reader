@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <tuple>
 
-namespace xlsx_reader
+namespace spiritsaway::xlsx_reader
 {
 	class worksheet;
 	template <typename worksheet_t> 

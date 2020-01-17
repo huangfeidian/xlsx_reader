@@ -4,7 +4,7 @@
 #include <fstream>
 #include <iomanip>
 using namespace std;
-using namespace xlsx_reader;
+using namespace spiritsaway::xlsx_reader;
 bool json_test_type_parse()
 {
     vector<string> valid_inputs = {

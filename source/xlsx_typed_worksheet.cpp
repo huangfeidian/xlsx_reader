@@ -2,11 +2,11 @@
 #include <iostream>
 
 namespace {
-	using namespace xlsx_reader;
+	using namespace spiritsaway::xlsx_reader;
 	using namespace std;
 
 }
-namespace xlsx_reader{
+namespace spiritsaway::xlsx_reader{
 	using namespace std;
 	typed_header::typed_header(const typed_node_type_descriptor* in_type_desc, string_view in_header_name, string_view in_header_comment):type_desc(in_type_desc), header_name(in_header_name), header_comment(in_header_comment)
 	{

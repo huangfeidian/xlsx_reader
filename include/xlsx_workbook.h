@@ -3,7 +3,7 @@
 #include <memory>
 #include "xlsx_archive.h"
 #include <optional>
-namespace xlsx_reader
+namespace spiritsaway::xlsx_reader
 {
 	template <typename worksheet_t> 
 	class workbook

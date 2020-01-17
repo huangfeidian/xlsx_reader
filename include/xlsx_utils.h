@@ -6,7 +6,7 @@
 #include <optional>
 #include <string_view>
 
-namespace xlsx_reader
+namespace spiritsaway::xlsx_reader
 {
 	std::string column_index_to_string(std::uint32_t col_idx);
 	std::uint32_t column_index_from_string(const std::string& reference_string);

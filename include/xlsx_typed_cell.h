@@ -8,7 +8,7 @@
 #include <vector>
 #include "xlsx_types_forward.h"
 
-namespace xlsx_reader
+namespace spiritsaway::xlsx_reader
 {
 	template<typename T>
 	struct is_tuple_impl : std::false_type {};

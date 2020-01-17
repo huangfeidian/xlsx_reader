@@ -14,7 +14,7 @@ extern "C"
 
 
 
-namespace xlsx_reader
+namespace spiritsaway::xlsx_reader
 {
 	using namespace std;
 	using namespace tinyxml2;

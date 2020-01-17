@@ -4,7 +4,7 @@
 #include <fstream>
 #include <iomanip>
 using namespace std;
-using namespace xlsx_reader;
+using namespace spiritsaway::xlsx_reader;
 
 //int main(int argc, char** argv)
 int main(void)

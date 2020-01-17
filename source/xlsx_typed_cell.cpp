@@ -45,7 +45,7 @@ namespace {
 		return result_str;
 	}
 }
-namespace xlsx_reader{
+namespace spiritsaway::xlsx_reader{
 	using namespace std;
 	vector<string_view> parse_token_from_type_str(string_view type_string)
 	{
