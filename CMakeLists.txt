@@ -4,7 +4,6 @@ PROJECT(xlsx_reader)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_FLAGS "-static ${CMAKE_CXX_FLAGS}")
 if(MSVC)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++latest")
 endif(MSVC)
@@ -31,25 +30,25 @@ FILE(GLOB_RECURSE XLSX_READER_TEST_LIST ${XLSX_READER_TEST_DIR}/*.cpp)
 
 INCLUDE_DIRECTORIES(${XLSX_READER_HEADER_DIR})
 
-ADD_LIBRARY(xlsx_reader STATIC ${XLSX_READER_SRC_LIST})
+ADD_LIBRARY(xlsx_reader  ${XLSX_READER_SRC_LIST})
 target_link_libraries(xlsx_reader miniz::miniz tinyxml2::tinyxml2)
 
 ADD_EXECUTABLE(cell_test ${XLSX_READER_TEST_DIR}/typed_cell_test.cpp)
 ADD_EXECUTABLE(workbook_test ${XLSX_READER_TEST_DIR}/workbook_test.cpp)
 
-target_link_libraries(cell_test xlsx_reader miniz::miniz tinyxml2::tinyxml2)
-target_link_libraries(workbook_test xlsx_reader miniz::miniz tinyxml2::tinyxml2)
+target_link_libraries(cell_test xlsx_reader)
+target_link_libraries(workbook_test xlsx_reader)
 
 IF(WITH_JSON_SUPPORT)
 	find_package(nlohmann_json CONFIG REQUIRED)
 	INCLUDE_DIRECTORIES(${nlohmann_json_include_dirs})
 	ADD_EXECUTABLE(json_test ${XLSX_READER_TEST_DIR}/json_test.cpp)
-	target_link_libraries(json_test xlsx_reader miniz::miniz tinyxml2::tinyxml2)
+	target_link_libraries(json_test xlsx_reader)
     target_link_libraries(json_test nlohmann_json::nlohmann_json)
 ENDIF(WITH_JSON_SUPPORT)
 
 
-foreach(p LIB INCLUDE)
+foreach(p LIB BIN INCLUDE)
 	set(var CMAKE_INSTALL_${p}DIR)
 	if(NOT IS_ABSOLUTE "${${var}}")
 		set(${var} "${CMAKE_INSTALL_PREFIX}/${p}")
@@ -70,6 +69,7 @@ install(FILES
 install(TARGETS ${PROJECT_NAME} EXPORT ${PROJECT_NAME}Targets
     ARCHIVE  DESTINATION lib
     LIBRARY DESTINATION lib
+    RUNTIME DESTINATION bin
     )
 
 install(DIRECTORY ${XLSX_READER_HEADER_DIR}/ DESTINATION include/${PROJECT_NAME})
