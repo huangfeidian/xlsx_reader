@@ -8,7 +8,7 @@ namespace {
 }
 namespace spiritsaway::xlsx_reader{
 	using namespace std;
-	typed_header::typed_header(const typed_node_type_descriptor* in_type_desc, string_view in_header_name, string_view in_header_comment):type_desc(in_type_desc), header_name(in_header_name), header_comment(in_header_comment)
+	typed_header::typed_header(const typed_value_desc* in_type_desc, string_view in_header_name, string_view in_header_comment):type_desc(in_type_desc), header_name(in_header_name), header_comment(in_header_comment)
 	{
 
 	}
@@ -18,19 +18,7 @@ namespace spiritsaway::xlsx_reader{
 		return output_stream;
 	}
 
-	void typed_header::cleanup_resource()
-	{
-		if (!type_desc)
-		{
-			return;
-		}
-		if (type_desc->_type <= basic_value_type::number_double)
-		{
-			return;
-		}
-		delete type_desc;
-		type_desc = nullptr;
-	}
+	
 	bool typed_worksheet::convert_typed_header()
 	{
 		typed_headers.clear();
@@ -45,7 +33,7 @@ namespace spiritsaway::xlsx_reader{
 		{
 			return false;
 		}
-		for(int i= 1; i< header_name_row.size(); i++)
+		for(std::size_t i= 1; i< header_name_row.size(); i++)
 		{			
 			auto cur_header_name = get_cell(1, i);
 			if(cur_header_name.empty())
@@ -60,7 +48,7 @@ namespace spiritsaway::xlsx_reader{
 			{
 				cerr <<"invalid type desc for header type at column " << i << endl;
 			}
-			auto cur_type_desc = typed_value_parser::parse_type(cur_cell_value);
+			auto cur_type_desc = typed_value_desc::get_type_from_str(cur_cell_value);
 			string_view header_comment = get_cell(3, column_idx);
 			typed_headers.push_back(new typed_header(cur_type_desc, cur_header_name, header_comment));
 
@@ -90,12 +78,13 @@ namespace spiritsaway::xlsx_reader{
 		}
 		return true;
 	}
-	int typed_worksheet::value_begin_row() const
+	std::uint32_t typed_worksheet::value_begin_row() const
 	{
 		return 4;
 	}
-	void typed_worksheet::convert_cell_to_typed_value()
+	void typed_worksheet::convert_cell_to_arena_typed_value()
 	{
+		arena_typed_value_parser cur_parser(memory_arena);
 		all_cell_values.clear();
 		auto value_begin_row_idx = value_begin_row();
 		const auto& all_row_info = get_all_row();
@@ -106,25 +95,31 @@ namespace spiritsaway::xlsx_reader{
 		}
 		all_cell_values.reserve(1 + max_rows - value_begin_row_idx);
 		all_cell_values.emplace_back();
-		for (int i = value_begin_row_idx; i < all_row_info.size(); i++)
+		for (std::uint32_t i = value_begin_row_idx; i < all_row_info.size(); i++)
 		{
 			all_cell_values.emplace_back(all_row_info[i].size());
 		}
-		for (int i = value_begin_row(); i < all_row_info.size(); i++)
+		for (std::uint32_t i = value_begin_row(); i < all_row_info.size(); i++)
 		{
-			for (int j = 1; j < all_row_info[i].size(); j++)
+			for (std::uint32_t j = 1; j < all_row_info[i].size(); j++)
 			{
 				string_view cur_cell = get_cell(i, j);
 				if (cur_cell.empty())
 				{
 					continue;
 				}
-				all_cell_values[i - value_begin_row_idx + 1][j].~typed_value();
-				typed_value_parser::parse_value_with_type(typed_headers[j]->type_desc, cur_cell, all_cell_values[i - value_begin_row_idx + 1][j]);
+				
+				auto new_typed_value = memory_arena.get<arena_typed_value>(1);
+				
+				if (cur_parser.parse_value_with_type(typed_headers[j]->type_desc, cur_cell, *new_typed_value))
+				{
+					all_cell_values[i - value_begin_row_idx + 1][j] = new_typed_value;
+				}
+				
 			}
-			if (all_cell_values[i - value_begin_row_idx + 1][1].type_desc)
+			if (all_cell_values[i - value_begin_row_idx + 1][1]->type_desc)
 			{
-				_indexes[&(all_cell_values[i - value_begin_row_idx + 1][1])] = i - value_begin_row_idx + 1;
+				_indexes[(all_cell_values[i - value_begin_row_idx + 1][1])] = i - value_begin_row_idx + 1;
 			}
 		}
 	}
@@ -141,7 +136,7 @@ namespace spiritsaway::xlsx_reader{
 	{
 		if (convert_typed_header())
 		{
-			convert_cell_to_typed_value();
+			convert_cell_to_arena_typed_value();
 		}
 		else
 		{
@@ -163,17 +158,10 @@ namespace spiritsaway::xlsx_reader{
 		{
 			if (i)
 			{
-				const_cast<typed_header*>(i)->cleanup_resource();
 				delete i;
 			}
 		}
-		for (auto& i : all_cell_values)
-		{
-			for (auto& j : i)
-			{
-				j.cleanup_resource();
-			}
-		}
+		
 
 	}
 	const vector<const typed_header*>& typed_worksheet::get_typed_headers() const
@@ -192,7 +180,7 @@ namespace spiritsaway::xlsx_reader{
 			return header_iter->second;
 		}
 	}
-	uint32_t typed_worksheet::get_indexed_row(const typed_value* first_row_value) const
+	uint32_t typed_worksheet::get_indexed_row(const arena_typed_value* first_row_value) const
 	{
 		auto iter = _indexes.find(first_row_value);
 		if(iter == _indexes.end())
@@ -204,7 +192,7 @@ namespace spiritsaway::xlsx_reader{
 			return iter->second;
 		}
 	}
-	const typed_value* typed_worksheet::get_typed_cell_value(uint32_t row_idx, uint32_t column_idx) const
+	const arena_typed_value* typed_worksheet::get_typed_cell_value(uint32_t row_idx, uint32_t column_idx) const
 	{
 		if (row_idx == 0 || column_idx == 0)
 		{
@@ -218,9 +206,9 @@ namespace spiritsaway::xlsx_reader{
 		{
 			return nullptr;
 		}
-		return &all_cell_values[row_idx][column_idx];
+		return all_cell_values[row_idx][column_idx];
 	}
-	const vector<typed_value>& typed_worksheet::get_ref_row(string_view sheet_name, const typed_value*  first_row_value) const
+	const vector<const arena_typed_value*>& typed_worksheet::get_ref_row(string_view sheet_name, const arena_typed_value*  first_row_value) const
 	{
 		auto current_workbook = get_workbook();
 		if(! current_workbook)
@@ -240,7 +228,7 @@ namespace spiritsaway::xlsx_reader{
 		}
 		return the_worksheet.get_typed_row(row_index);
 	}
-	const vector<typed_value>& typed_worksheet::get_typed_row(uint32_t _idx) const
+	const vector<const arena_typed_value*>& typed_worksheet::get_typed_row(uint32_t _idx) const
 	{
 		if (_idx == 0 || _idx >= all_cell_values.size())
 		{
@@ -251,7 +239,7 @@ namespace spiritsaway::xlsx_reader{
 			return all_cell_values[_idx];
 		}
 	}
-	const vector<vector<typed_value>>& typed_worksheet::get_all_typed_row_info() const
+	const vector<vector<const arena_typed_value*>>& typed_worksheet::get_all_typed_row_info() const
 	{
 		return all_cell_values;
 	}
@@ -259,7 +247,7 @@ namespace spiritsaway::xlsx_reader{
 	{
 		if (typed_headers.size() < 2)
 		{
-			cout << "current sheet doesnt has headers " << endl;
+			std::cout << "current sheet doesnt has headers " << std::endl;
 			return false;
 		}
 		if(typed_headers[1]->header_name != index_column_name)
@@ -323,7 +311,7 @@ namespace spiritsaway::xlsx_reader{
 				cout << " not ref type for ref int header " << int_ref_name << endl;
 				return false;
 			}
-			if(std::get<2>(ref_detail.value()) != "int"sv)
+			if(ref_detail.value().second != "int"sv)
 			{
 				cout << " not int ref type for ref int header " << int_ref_name << endl;
 				return false;
@@ -354,7 +342,7 @@ namespace spiritsaway::xlsx_reader{
 				cout << " not ref type for ref str header " << str_ref_name << endl;
 				return false;
 			}
-			if(std::get<2>(ref_detail.value()) != "str"sv)
+			if(ref_detail.value().second != "str"sv)
 			{
 				cout << " not str ref type for ref str header " << str_ref_name << endl;
 				return false;
@@ -379,35 +367,7 @@ namespace spiritsaway::xlsx_reader{
 		return *type_desc == *other.type_desc;
 
 	}
-	std::uint32_t typed_worksheet::memory_details() const
-	{
-		std::uint32_t result = 0;
-		uint32_t temp = 0;
-		temp = sizeof(vector<typed_header*>) + typed_headers.capacity() * sizeof(typed_header*) + typed_headers.size() * sizeof(typed_header);
-		auto parent_size = worksheet::memory_details();
-		cout << "parent worksheet size is " << parent_size << endl;
-		result += parent_size;
-		cout << "typed headers size " << temp<<endl;
-		result += temp;
-		temp = 0;
-		for (const auto& i : all_cell_values)
-		{
-			for (const auto& j : i)
-			{
-				temp += j.memory_details();
-			}
-			
-		}
-		cout << "typed_value memory " << temp << " with size " << (max_rows - value_begin_row()) * max_columns << endl;
-		result += temp;
-		temp = 0;
-		temp += 12 * _indexes.bucket_count();
-		cout << "_indexes memory " << temp << " with size " << _indexes.size() << endl;
-		result += temp;
-
-		cout << "sheet "  << _name << " memory total "<< result<<endl<<endl;
-		return result;
-	}
+	
 	vector<uint32_t> typed_worksheet::get_header_index_vector(const vector<string_view>& header_names) const
 	{
 		vector<uint32_t> result;

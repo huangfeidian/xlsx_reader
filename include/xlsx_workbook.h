@@ -3,6 +3,8 @@
 #include <memory>
 #include "xlsx_archive.h"
 #include <optional>
+
+#include <typed_string/string_util.h>
 namespace spiritsaway::xlsx_reader
 {
 	template <typename worksheet_t> 
@@ -11,7 +13,6 @@ namespace spiritsaway::xlsx_reader
 	public:
 		std::vector<std::unique_ptr<worksheet_t>> _worksheets;
 		std::vector<sheet_desc> sheet_relations; 
-		
 	private:
 		std::vector<std::string> shared_string;
 		std::unordered_map<std::string, std::uint32_t> shared_string_indexes;
@@ -74,9 +75,9 @@ namespace spiritsaway::xlsx_reader
 			archive_content = in_archive;
 		
 			auto in_shared_string = in_archive->get_shared_string();
-			for (int i = 0; i < in_shared_string.size(); i++)
+			for (std::uint32_t i = 0; i < in_shared_string.size(); i++)
 			{
-				auto cur_string_view = strip_blank(std::string_view(in_shared_string[i]));
+				auto cur_string_view = spiritsaway::string_util::strip_blank(std::string_view(in_shared_string[i]));
 				std::string cur_string(cur_string_view);
 				shared_string.push_back(cur_string);
 				shared_string_indexes[shared_string[i]] = i;
@@ -84,14 +85,14 @@ namespace spiritsaway::xlsx_reader
 			sheet_relations = in_archive->get_all_sheet_relation();
 			// we should load all shared strings here incase any relocation of the shared_string vector
 			// invalidate the string_views that ref the shared string
-			for (int i = 0; i < sheet_relations.size(); i++)
+			for (std::uint32_t i = 0; i < sheet_relations.size(); i++)
 			{
 				get_cells_for_sheet(i + 1);
 			}
 			shared_string.shrink_to_fit();
 
 			// from now the shared_string begins to function
-			for(int i = 0; i < sheet_relations.size(); i++)
+			for(std::uint32_t i = 0; i < sheet_relations.size(); i++)
 			{
 				auto cur_worksheet = new worksheet_t(get_cells_for_sheet(i + 1), get<1>(sheet_relations[i]), get<0>(sheet_relations[i]), this);
 				cur_worksheet->after_load_process();
@@ -170,7 +171,7 @@ namespace spiritsaway::xlsx_reader
 					}
 
 					std::string_view current_value = cell_node->FirstChildElement("v")->GetText();
-					current_value = strip_blank(current_value);
+					current_value = spiritsaway::string_util::strip_blank(current_value);
 					auto type_attr = cell_node->Attribute("t");
 					std::uint32_t ss_idx = 0;
 					if(type_attr && *type_attr == 's')

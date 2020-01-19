@@ -28,7 +28,7 @@ namespace spiritsaway::xlsx_reader {
 		}
 		row_info.reserve(max_rows + 1);
 		row_info.emplace_back();
-		for (int i = 0; i < max_rows; i++)
+		for (std::size_t i = 0; i < max_rows; i++)
 		{
 			row_info.emplace_back(max_columns + 1);
 		}
@@ -81,10 +81,10 @@ namespace spiritsaway::xlsx_reader {
 	{
 		output_stream<<"worksheet name: "<< in_worksheet.get_name()<<", sheet_id: "<<in_worksheet._sheet_id<<endl;
 		const auto& all_row_info = in_worksheet.get_all_row();
-		for (int i = 1; i < all_row_info.size(); i++)
+		for (std::uint32_t i = 1; i < all_row_info.size(); i++)
 		{
 			output_stream << "row " << i << " has cells " << all_row_info[i].size() - 1 << endl;
-			for (int j = 1; j < all_row_info[i].size(); j++)
+			for (std::uint32_t j = 1; j < all_row_info[i].size(); j++)
 			{
 				output_stream << "cell at row " << i << " column " << j << " with value " << in_worksheet.get_cell(i, j) << endl;
 			}

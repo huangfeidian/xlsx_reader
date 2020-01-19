@@ -59,21 +59,12 @@ namespace spiritsaway::xlsx_reader
 		case basic_value_type::ref_id:
 		{
 			auto temp_detail = std::get<typed_node_type_descriptor::ref_detail_t>(cur_type._type_detail);
-			string_view cur_workbook, cur_worksheet, cur_ref_type;
-			if (!cur_workbook.empty())
-			{
-				json result_json;
-				result_json["ref"] = { cur_worksheet, cur_ref_type };
-				j = result_json;
-				return;
-			}
-			else
-			{
-				json result_json;
-				result_json["ref"] = { cur_workbook, cur_worksheet, cur_ref_type };
-				j = result_json;
-				return;
-			}
+			auto [cur_worksheet, cur_ref_type] = templ_detail;
+			json result_json;
+			result_json["ref"] = { cur_worksheet, cur_ref_type };
+			j = result_json;
+			return;
+			
 		}
 		default:
 			j = nullptr;

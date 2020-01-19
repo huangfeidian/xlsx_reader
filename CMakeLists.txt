@@ -16,9 +16,12 @@ FIND_PACKAGE(miniz CONFIG REQUIRED)
 INCLUDE_DIRECTORIES(${miniz_INCLUDE_DIRS})
 
 FIND_PACKAGE(tinyxml2 CONFIG REQUIRED)
-INCLUDE_DIRECTORIES(${tinyxml2_headers})
+INCLUDE_DIRECTORIES(${tinyxml2_include_dirs})
 
 
+FIND_PACKAGE(typed_string CONFIG REQUIRED)
+
+INCLUDE_DIRECTORIES(${typed_string_include_dirs})
 
 SET(XLSX_READER_SRC_DIR ${CMAKE_SOURCE_DIR}/source)
 
@@ -31,12 +34,12 @@ FILE(GLOB_RECURSE XLSX_READER_TEST_LIST ${XLSX_READER_TEST_DIR}/*.cpp)
 INCLUDE_DIRECTORIES(${XLSX_READER_HEADER_DIR})
 
 ADD_LIBRARY(xlsx_reader  ${XLSX_READER_SRC_LIST})
-target_link_libraries(xlsx_reader miniz::miniz tinyxml2::tinyxml2)
+target_link_libraries(xlsx_reader miniz::miniz tinyxml2::tinyxml2 typed_string)
 
-ADD_EXECUTABLE(cell_test ${XLSX_READER_TEST_DIR}/typed_cell_test.cpp)
+
 ADD_EXECUTABLE(workbook_test ${XLSX_READER_TEST_DIR}/workbook_test.cpp)
 
-target_link_libraries(cell_test xlsx_reader)
+
 target_link_libraries(workbook_test xlsx_reader)
 
 IF(WITH_JSON_SUPPORT)
