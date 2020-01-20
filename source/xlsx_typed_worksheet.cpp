@@ -85,7 +85,7 @@ namespace spiritsaway::xlsx_reader{
 	}
 	void typed_worksheet::convert_cell_to_arena_typed_value()
 	{
-		arena_typed_value_parser cur_parser(memory_arena);
+		arena_typed_string_parser cur_parser(memory_arena);
 		all_cell_values.clear();
 		auto value_begin_row_idx = value_begin_row();
 		const auto& all_row_info = get_all_row();
