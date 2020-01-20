@@ -10,10 +10,10 @@ namespace spiritsaway::xlsx_reader{
 	class typed_header
 	{
 	public:
-		const typed_value_desc* type_desc;
+		const typed_string_desc* type_desc;
 		std::string_view header_name;
 		std::string_view header_comment;
-		typed_header(const typed_value_desc* in_type_desc, std::string_view in_header_name, std::string_view in_header_comment);
+		typed_header(const typed_string_desc* in_type_desc, std::string_view in_header_name, std::string_view in_header_comment);
 		friend std::ostream& operator<<(std::ostream& output_stream, const typed_header& in_typed_header);
 		
 		bool operator==(const typed_header& other) const;

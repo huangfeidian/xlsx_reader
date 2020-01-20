@@ -9,7 +9,7 @@ namespace {
 }
 namespace spiritsaway::xlsx_reader{
 	using namespace std;
-	typed_header::typed_header(const typed_value_desc* in_type_desc, string_view in_header_name, string_view in_header_comment):type_desc(in_type_desc), header_name(in_header_name), header_comment(in_header_comment)
+	typed_header::typed_header(const typed_string_desc* in_type_desc, string_view in_header_name, string_view in_header_comment):type_desc(in_type_desc), header_name(in_header_name), header_comment(in_header_comment)
 	{
 
 	}
@@ -49,7 +49,7 @@ namespace spiritsaway::xlsx_reader{
 			{
 				cerr <<"invalid type desc for header type at column " << i << endl;
 			}
-			auto cur_type_desc = typed_value_desc::get_type_from_str(cur_cell_value);
+			auto cur_type_desc = typed_string_desc::get_type_from_str(cur_cell_value);
 			string_view header_comment = get_cell(3, column_idx);
 			typed_headers.push_back(new typed_header(cur_type_desc, cur_header_name, header_comment));
 
