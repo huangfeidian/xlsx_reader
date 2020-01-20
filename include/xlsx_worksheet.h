@@ -33,7 +33,7 @@ namespace spiritsaway::xlsx_reader
 		virtual ~worksheet();
 		void after_load_process(); //处理load完xml之后的后处理
 		void load_from_cells();
-		std::uint32_t memory_details() const;
+		virtual std::uint32_t memory_consumption() const;
 		worksheet& operator=(const worksheet& other) = delete;
 		worksheet(const worksheet& other) = delete;
 	private:

@@ -20,9 +20,10 @@ namespace spiritsaway::xlsx_reader{
 		
 	};
 	template<typename... args, std::size_t... arg_idx>
-	std::tuple<std::optional<args>...> try_convert_row_impl(const std::vector<std::uint32_t>& column_index, const std::vector<const arena_typed_value*>& row_value, std::index_sequence<arg_idx...>)
+	std::tuple<std::
+		optional<args>...> try_convert_row_impl(const std::vector<std::uint32_t>& column_index, const std::vector<const arena_typed_value*>& row_value, std::index_sequence<arg_idx...>)
 	{
-		return std::make_tuple(row_value[column_index[arg_idx]]->expect_value<args>()...);
+		return std::make_tuple((row_value[column_index[arg_idx]] ? row_value[column_index[arg_idx]]->expect_value<args>() : std::nullopt)...);
 	}
 	class typed_worksheet: public worksheet
 	{
@@ -73,6 +74,7 @@ namespace spiritsaway::xlsx_reader{
 	public:
 		typed_worksheet(const typed_worksheet& other) = delete;
 		typed_worksheet& operator=(const typed_worksheet& other) = delete;
+		std::uint32_t memory_consumption() const;
 
 	private:
 		std::vector<const typed_header*> typed_headers;

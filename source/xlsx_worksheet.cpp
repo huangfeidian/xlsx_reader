@@ -103,10 +103,9 @@ namespace spiritsaway::xlsx_reader {
 	{
 		return reinterpret_cast<const workbook<worksheet>*>(_workbook);
 	}
-	uint32_t worksheet::memory_details() const
+	uint32_t worksheet::memory_consumption() const
 	{
 		uint32_t result = sizeof(uint32_t) * max_columns * max_rows;
-		cout << "sheet "<<_name<<"has row " << max_rows<<" column  "<< max_columns<< " total_memory " << result << endl;
 		return result;
 	}
 };

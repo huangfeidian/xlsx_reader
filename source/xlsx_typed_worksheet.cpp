@@ -1,5 +1,6 @@
 ﻿#include <xlsx_typed_worksheet.h>
 #include <iostream>
+#include <typed_string/arena_typed_string_parser.h>
 
 namespace {
 	using namespace spiritsaway::xlsx_reader;
@@ -125,6 +126,7 @@ namespace spiritsaway::xlsx_reader{
 	}
 	typed_worksheet::typed_worksheet(const vector<cell>& all_cells, uint32_t in_sheet_id, string_view in_sheet_name, const workbook<typed_worksheet>* in_workbook)
 	: worksheet(all_cells, in_sheet_id, in_sheet_name, reinterpret_cast<const workbook<worksheet>*>(in_workbook))
+	, memory_arena(4 * 1024)
 	{
 
 	}
@@ -376,5 +378,9 @@ namespace spiritsaway::xlsx_reader{
 			result.push_back(get_header_idx(i));
 		}
 		return result;
+	}
+	std::uint32_t typed_worksheet::memory_consumption() const
+	{
+		return memory_arena.consumption() + worksheet::memory_consumption();
 	}
 }

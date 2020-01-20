@@ -3,7 +3,7 @@
 #include <memory>
 #include "xlsx_archive.h"
 #include <optional>
-
+#include <typed_string/memory_arena.h>
 #include <typed_string/string_util.h>
 namespace spiritsaway::xlsx_reader
 {
@@ -13,11 +13,13 @@ namespace spiritsaway::xlsx_reader
 	public:
 		std::vector<std::unique_ptr<worksheet_t>> _worksheets;
 		std::vector<sheet_desc> sheet_relations; 
+		
 	private:
-		std::vector<std::string> shared_string;
-		std::unordered_map<std::string, std::uint32_t> shared_string_indexes;
+		std::vector<std::string_view> shared_string;
+		spiritsaway::memory::arena string_arena;
+		std::unordered_map<std::string_view, std::uint32_t> shared_string_indexes;
 		std::unordered_map<std::string_view, std::uint32_t> sheets_name_map;
-		std::uint32_t get_index_for_string(const std::string& in_str)
+		std::uint32_t get_index_for_string(std::string_view in_str)
 		{
 			auto iter = shared_string_indexes.find(in_str);
 			if (iter != shared_string_indexes.end())
@@ -26,8 +28,17 @@ namespace spiritsaway::xlsx_reader
 			}
 			else
 			{
-				shared_string.push_back(in_str);
-				shared_string_indexes[in_str] = shared_string.size() - 1;
+				auto cur_view_sz = in_str.size();
+				std::string_view cur_str_view;
+				if (cur_view_sz)
+				{
+					char* new_buffer = string_arena.get<char>(cur_view_sz);
+					std::copy(in_str.cbegin(), in_str.cend(), new_buffer);
+					cur_str_view = string_view(new_buffer, cur_view_sz);
+				}
+				
+				shared_string.push_back(cur_str_view);
+				shared_string_indexes[cur_str_view] = shared_string.size() - 1;
 				return shared_string.size() - 1;
 			}
 		}
@@ -71,15 +82,13 @@ namespace spiritsaway::xlsx_reader
 		}
 
 		workbook(std::shared_ptr<archive> in_archive)
+			:string_arena(4 * 1024)
 		{
 			archive_content = in_archive;
-		
-			auto in_shared_string = in_archive->get_shared_string();
-			for (std::uint32_t i = 0; i < in_shared_string.size(); i++)
+	
+			in_archive->get_shared_string_view(string_arena, shared_string);
+			for (std::uint32_t i = 0; i < shared_string.size(); i++)
 			{
-				auto cur_string_view = spiritsaway::string_util::strip_blank(std::string_view(in_shared_string[i]));
-				std::string cur_string(cur_string_view);
-				shared_string.push_back(cur_string);
 				shared_string_indexes[shared_string[i]] = i;
 			}
 			sheet_relations = in_archive->get_all_sheet_relation();
@@ -112,14 +121,14 @@ namespace spiritsaway::xlsx_reader
 			}
 			return output_stream;
 		}
-		std::uint32_t memory_details() const
+		std::uint32_t memory_consumption() const
 		{
 			std::uint32_t result = 0;
 			for (const auto& i : _worksheets)
 			{
 				if (i)
 				{
-					result += i->memory_details();
+					result += i->memory_consumption();
 				}
 			}
 			std::cout << "_worksheets memory " << result << std::endl;
@@ -180,7 +189,7 @@ namespace spiritsaway::xlsx_reader
 					}
 					else
 					{
-						ss_idx = get_index_for_string(std::string(current_value));
+						ss_idx = get_index_for_string(current_value);
 					}
 					cell_node = cell_node->NextSiblingElement("c");
 					result.emplace_back(row_index, col_idx, ss_idx);
