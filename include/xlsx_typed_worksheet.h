@@ -47,7 +47,7 @@ namespace spiritsaway::xlsx_reader{
 
 		const std::vector<std::vector<const arena_typed_value*>>& get_all_typed_row_info() const;
 
-		bool check_header_match(const std::unordered_map<std::string_view, const typed_header*>& other_headers, std::string_view index_column_name, const std::vector<std::string_view>& int_ref_headers, const std::vector<std::string_view>& string_ref_headers) const;
+		bool check_header_match(const std::unordered_map<std::string_view, const typed_header*>& other_headers, std::string_view index_column_name) const;
 		std::uint32_t memory_details() const;
 		template<typename... args>
 		std::tuple<std::optional<args>...> try_convert_row(std::uint32_t row_idx, const std::vector<std::uint32_t>& column_index) const

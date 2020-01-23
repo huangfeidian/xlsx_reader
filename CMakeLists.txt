@@ -34,7 +34,8 @@ FILE(GLOB_RECURSE XLSX_READER_TEST_LIST ${XLSX_READER_TEST_DIR}/*.cpp)
 INCLUDE_DIRECTORIES(${XLSX_READER_HEADER_DIR})
 
 ADD_LIBRARY(xlsx_reader  ${XLSX_READER_SRC_LIST})
-target_link_libraries(xlsx_reader miniz::miniz tinyxml2::tinyxml2 typed_string)
+target_link_libraries(xlsx_reader PUBLIC miniz::miniz tinyxml2::tinyxml2 typed_string)
+
 
 
 ADD_EXECUTABLE(workbook_test ${XLSX_READER_TEST_DIR}/workbook_test.cpp)

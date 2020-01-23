@@ -245,7 +245,7 @@ namespace spiritsaway::xlsx_reader{
 	{
 		return all_cell_values;
 	}
-	bool typed_worksheet::check_header_match(const unordered_map<string_view, const typed_header*>& other_headers, string_view index_column_name, const vector<string_view>& int_ref_headers, const vector<string_view>& string_ref_headers) const
+	bool typed_worksheet::check_header_match(const unordered_map<string_view, const typed_header*>& other_headers, string_view index_column_name) const
 	{
 		if (typed_headers.size() < 2)
 		{
@@ -287,69 +287,8 @@ namespace spiritsaway::xlsx_reader{
 			}
 
 		}
-		for(auto int_ref_name: int_ref_headers)
-		{
-			auto header_idx = get_header_idx(int_ref_name);
-			if(header_idx == 0)
-			{
-				cout << "cant find ref int header " << int_ref_name << endl;
-				return false;
-			}
-			auto cur_header = typed_headers[header_idx];
-
-			if(!cur_header ||!cur_header->type_desc)
-			{
-				cout << "type desc is empty for ref int header " << int_ref_name << endl;
-				return false;
-			}
-			if(cur_header->type_desc->_type != basic_value_type::ref_id)
-			{
-				cout << " not ref type for ref int header " << int_ref_name << endl;
-				return false;
-			}
-			auto ref_detail = cur_header->type_desc->get_ref_detail_t();
-			if(!ref_detail)
-			{
-				cout << " not ref type for ref int header " << int_ref_name << endl;
-				return false;
-			}
-			if(ref_detail.value().second != "int"sv)
-			{
-				cout << " not int ref type for ref int header " << int_ref_name << endl;
-				return false;
-			}
-		}
-		for(auto str_ref_name: string_ref_headers)
-		{
-			auto header_idx = get_header_idx(str_ref_name);
-			if(header_idx == 0)
-			{
-				cout << "cant find ref str header " << str_ref_name << endl;
-				return false;
-			}
-			auto cur_header = typed_headers[header_idx];
-			if(!cur_header || !cur_header->type_desc)
-			{
-				cout << "type desc is empty for ref str header " << str_ref_name << endl;
-				return false;
-			}
-			if(cur_header->type_desc->_type != basic_value_type::ref_id)
-			{
-				cout << " not ref type for ref str header " << str_ref_name << endl;
-				return false;
-			}
-			auto ref_detail = cur_header->type_desc->get_ref_detail_t();
-			if(!ref_detail)
-			{
-				cout << " not ref type for ref str header " << str_ref_name << endl;
-				return false;
-			}
-			if(ref_detail.value().second != "str"sv)
-			{
-				cout << " not str ref type for ref str header " << str_ref_name << endl;
-				return false;
-			}
-		}
+		
+		
 		return true;
 	}
 	bool typed_header::operator==(const typed_header& other) const
