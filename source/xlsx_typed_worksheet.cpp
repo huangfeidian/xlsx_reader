@@ -95,6 +95,7 @@ namespace spiritsaway::xlsx_reader{
 			return;
 		}
 		all_cell_values.reserve(1 + max_rows - value_begin_row_idx);
+		// 默认第一行是无效数据
 		all_cell_values.emplace_back();
 		for (std::uint32_t i = value_begin_row_idx; i < all_row_info.size(); i++)
 		{
@@ -241,9 +242,29 @@ namespace spiritsaway::xlsx_reader{
 			return all_cell_values[_idx];
 		}
 	}
-	const vector<vector<const arena_typed_value*>>& typed_worksheet::get_all_typed_row_info() const
+	std::vector<std::reference_wrapper<const std::vector<const arena_typed_value*>>> typed_worksheet::get_all_typed_row_info() const
 	{
-		return all_cell_values;
+		std::vector<std::reference_wrapper<const std::vector<const arena_typed_value*>>> result;
+		for (std::size_t i = 1; i < all_cell_values.size(); i++)
+		{
+			const auto& one_row = all_cell_values[i];
+
+			result.push_back(std::ref(one_row));
+		}
+		return result;
+	}
+	std::vector<std::reference_wrapper<const std::vector<const arena_typed_value*>>> typed_worksheet::get_typed_row_with_pred(std::function<bool(const std::vector<const arena_typed_value*>&)> pred) const
+	{
+		std::vector<std::reference_wrapper<const std::vector<const arena_typed_value*>>> result;
+		for (std::size_t i = 1; i < all_cell_values.size(); i++)
+		{
+			const auto& one_row = all_cell_values[i];
+			if (pred(one_row))
+			{
+				result.push_back(std::ref(one_row));
+			}
+		}
+		return result;
 	}
 	bool typed_worksheet::check_header_match(const unordered_map<string_view, const typed_header*>& other_headers, string_view index_column_name) const
 	{

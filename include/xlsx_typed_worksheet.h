@@ -44,9 +44,9 @@ namespace spiritsaway::xlsx_reader{
 		// 根据第一列的值来获取所属的行
 		std::uint32_t get_indexed_row(const arena_typed_value* first_row_value) const;
 		const std::vector<const arena_typed_value*>& get_ref_row(std::string_view sheet_name, const arena_typed_value* first_row_value) const;
-
-		const std::vector<std::vector<const arena_typed_value*>>& get_all_typed_row_info() const;
-
+		std::vector<std::reference_wrapper<const std::vector<const arena_typed_value*>>> get_all_typed_row_info() const;
+		// 根据过滤条件来获取相关行
+		std::vector<std::reference_wrapper<const std::vector<const arena_typed_value*>>> get_typed_row_with_pred(std::function<bool(const std::vector<const arena_typed_value*>&)>) const;
 		bool check_header_match(const std::unordered_map<std::string_view, const typed_header*>& other_headers, std::string_view index_column_name) const;
 		std::uint32_t memory_details() const;
 		template<typename... args>
@@ -56,6 +56,11 @@ namespace spiritsaway::xlsx_reader{
 			{
 				return std::make_tuple(std::optional<args>()...);
 			}
+			return try_convert_row<args...>(all_cell_values[row_idx], column_index);
+		}
+		template<typename... args>
+		std::tuple<std::optional<args>...> try_convert_row(const std::vector<const arena_typed_value*>& data, const std::vector<std::uint32_t>& column_index) const
+		{
 			if (column_index.size() != sizeof...(args))
 			{
 				return std::make_tuple(std::optional<args>()...);
@@ -67,7 +72,7 @@ namespace spiritsaway::xlsx_reader{
 					return std::make_tuple(std::optional<args>()...);
 				}
 			}
-			return try_convert_row_impl<args...>(column_index, all_cell_values[row_idx], std::index_sequence_for<args...>());
+			return try_convert_row_impl<args...>(column_index, data, std::index_sequence_for<args...>());
 		}
 		std::vector<std::uint32_t> get_header_index_vector(const std::vector<std::string_view>& header_names) const;
 

@@ -42,15 +42,16 @@ namespace spiritsaway::xlsx_reader
 		json row_matrix;
 		const auto& all_row_info = cur_worksheet.get_all_typed_row_info();
 		
-		for (std::uint32_t i = 1; i < all_row_info.size(); i++)
+		for (auto one_row_ref: all_row_info)
 		{
-			auto cur_row_index = i;
+			auto&  one_row = one_row_ref.get();
 			json row_j = json::object();
-			for (std::uint32_t j = 1; j < all_row_info[i].size(); j++)
+
+			for (std::uint32_t j = 1; j < one_row.size(); j++)
 			{
-				if (all_row_info[i][j])
+				if (one_row[j])
 				{
-					row_j[std::string((typed_headers[j])->header_name)] = all_row_info[i][j]->to_string();
+					row_j[std::string((typed_headers[j])->header_name)] = one_row[j]->to_string();
 				}
 				else
 				{
@@ -58,12 +59,9 @@ namespace spiritsaway::xlsx_reader
 				}
 				
 			}
-			row_matrix[to_string(cur_row_index)] = row_j;
+			row_matrix.push_back(row_j);
 		}
-		for(const auto& row_info: cur_worksheet.get_all_typed_row_info())
-		{
-			
-		}
+
 		new_j["matrix"] = row_matrix;
 		j = new_j;
 		return;
