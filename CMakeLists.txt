@@ -34,20 +34,20 @@ FILE(GLOB_RECURSE XLSX_READER_TEST_LIST ${XLSX_READER_TEST_DIR}/*.cpp)
 INCLUDE_DIRECTORIES(${XLSX_READER_HEADER_DIR})
 
 ADD_LIBRARY(xlsx_reader  ${XLSX_READER_SRC_LIST})
-target_link_libraries(xlsx_reader PUBLIC miniz::miniz tinyxml2::tinyxml2 typed_string)
+target_link_libraries(xlsx_reader PUBLIC miniz tinyxml2::tinyxml2 typed_string)
 
 
 
 ADD_EXECUTABLE(workbook_test ${XLSX_READER_TEST_DIR}/workbook_test.cpp)
 
 
-target_link_libraries(workbook_test xlsx_reader)
+target_link_libraries(workbook_test xlsx_reader miniz)
 
 IF(WITH_JSON_SUPPORT)
 	find_package(nlohmann_json CONFIG REQUIRED)
 	INCLUDE_DIRECTORIES(${nlohmann_json_include_dirs})
 	ADD_EXECUTABLE(json_test ${XLSX_READER_TEST_DIR}/json_test.cpp)
-	target_link_libraries(json_test xlsx_reader)
+	target_link_libraries(json_test xlsx_reader miniz)
     target_link_libraries(json_test nlohmann_json::nlohmann_json)
 ENDIF(WITH_JSON_SUPPORT)
 
