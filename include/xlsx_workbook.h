@@ -119,7 +119,7 @@ namespace spiritsaway::xlsx_reader
 			output_stream<<"workbook name:"<<string(in_workbook.get_workbook_name())<<std::endl;
 			for(const auto& one_worksheet: in_workbook._worksheets)
 			{
-				output_stream<<*one_worksheet<<endl;
+				output_stream<<*one_worksheet<<std::endl;
 			}
 			return output_stream;
 		}
@@ -151,7 +151,7 @@ namespace spiritsaway::xlsx_reader
 		
 		void after_load_process()
 		{
-			cout<<"Workbook "<<workbook_name<<" total sheets "<<_worksheets.size()<<std::endl;
+			std::cout<<"Workbook "<<workbook_name<<" total sheets "<<_worksheets.size()<<std::endl;
 		}
 		std::unordered_map<std::uint32_t, std::vector<cell>> all_cells;
 
@@ -170,7 +170,7 @@ namespace spiritsaway::xlsx_reader
 			auto row_node = sheet_data_node->FirstChildElement("row");
 			while(row_node)
 			{
-				uint32_t row_index = stoi(row_node->Attribute("r"));
+				uint32_t row_index = std::stoi(row_node->Attribute("r"));
 				auto cell_node = row_node->FirstChildElement("c");
 				while(cell_node)
 				{
