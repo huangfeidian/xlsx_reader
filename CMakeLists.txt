@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 3.1)
+﻿CMAKE_MINIMUM_REQUIRED(VERSION 3.1)
 
 PROJECT(xlsx_reader)
 set(CMAKE_CXX_STANDARD 17)
@@ -55,7 +55,8 @@ ENDIF(WITH_JSON_SUPPORT)
 foreach(p LIB BIN INCLUDE)
 	set(var CMAKE_INSTALL_${p}DIR)
 	if(NOT IS_ABSOLUTE "${${var}}")
-		set(${var} "${CMAKE_INSTALL_PREFIX}/${p}")
+		string(TOLOWER ${p} lower_p)
+        set(${var} "${CMAKE_INSTALL_PREFIX}/${lower_p}")
 	endif()
 endforeach()
 

@@ -5,6 +5,8 @@
 #include <optional>
 #include <typed_string/memory_arena.h>
 #include <typed_string/string_util.h>
+#include <iostream>
+
 namespace spiritsaway::xlsx_reader
 {
 	template <typename worksheet_t> 
@@ -34,7 +36,7 @@ namespace spiritsaway::xlsx_reader
 				{
 					char* new_buffer = string_arena.get<char>(cur_view_sz);
 					std::copy(in_str.cbegin(), in_str.cend(), new_buffer);
-					cur_str_view = string_view(new_buffer, cur_view_sz);
+					cur_str_view = std::string_view(new_buffer, cur_view_sz);
 				}
 				
 				shared_string.push_back(cur_str_view);
@@ -103,7 +105,7 @@ namespace spiritsaway::xlsx_reader
 			// from now the shared_string begins to function
 			for(std::uint32_t i = 0; i < sheet_relations.size(); i++)
 			{
-				auto cur_worksheet = new worksheet_t(get_cells_for_sheet(i + 1), get<1>(sheet_relations[i]), get<0>(sheet_relations[i]), this);
+				auto cur_worksheet = new worksheet_t(get_cells_for_sheet(i + 1), std::get<1>(sheet_relations[i]), std::get<0>(sheet_relations[i]), this);
 				cur_worksheet->after_load_process();
 				_worksheets.emplace_back(cur_worksheet);
 				auto current_sheet_name = cur_worksheet->get_name();
@@ -114,7 +116,7 @@ namespace spiritsaway::xlsx_reader
 		
 		friend std::ostream& operator<<(std::ostream& output_stream, const workbook& in_workbook)
 		{
-			output_stream<<"workbook name:"<<string(in_workbook.get_workbook_name())<<endl;
+			output_stream<<"workbook name:"<<string(in_workbook.get_workbook_name())<<std::endl;
 			for(const auto& one_worksheet: in_workbook._worksheets)
 			{
 				output_stream<<*one_worksheet<<endl;
@@ -143,7 +145,7 @@ namespace spiritsaway::xlsx_reader
 		std::shared_ptr<archive> archive_content;
 		std::shared_ptr<tinyxml2::XMLDocument> get_sheet_xml(std::uint32_t sheet_idx) const
 		{
-			auto sheet_path = "xl/worksheets/sheet" + to_string(sheet_idx) + ".xml";
+			auto sheet_path = "xl/worksheets/sheet" + std::to_string(sheet_idx) + ".xml";
 			return archive_content->get_xml_document(sheet_path);
 		}
 		
@@ -185,7 +187,7 @@ namespace spiritsaway::xlsx_reader
 					std::uint32_t ss_idx = 0;
 					if(type_attr && *type_attr == 's')
 					{
-						ss_idx = stoi(string(current_value));
+						ss_idx = stoi(std::string(current_value));
 					}
 					else
 					{
