@@ -49,14 +49,14 @@ namespace spiritsaway::xlsx_reader{
 			{
 				cerr <<"invalid type desc for header type at column " << i << endl;
 			}
-			auto cur_type_desc = typed_string_desc::get_type_from_str(cur_cell_value);
+			auto cur_type_desc = typed_string_desc::get_type_from_str(&memory_arena, cur_cell_value);
 			string_view header_comment = get_cell(3, column_idx);
 			typed_headers.push_back(new typed_header(cur_type_desc, cur_header_name, header_comment));
 
 			if (column_idx == 1)
 			{
 				// expect int or str in first column
-				switch (cur_type_desc->_type)
+				switch (cur_type_desc->m_type)
 				{
 				case basic_value_type::number_bool:
 				case basic_value_type::number_float:
