@@ -187,7 +187,7 @@ namespace spiritsaway::xlsx_reader
 					std::uint32_t ss_idx = 0;
 					if(type_attr && *type_attr == 's')
 					{
-						ss_idx = stoi(std::string(current_value));
+						ss_idx = std::stoi(std::string(current_value));
 					}
 					else
 					{
