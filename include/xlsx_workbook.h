@@ -151,7 +151,7 @@ namespace spiritsaway::xlsx_reader
 		
 		void after_load_process()
 		{
-			std::cout<<"Workbook "<<workbook_name<<" total sheets "<<_worksheets.size()<<std::endl;
+			// std::cout<<"Workbook "<<workbook_name<<" total sheets "<<_worksheets.size()<<std::endl;
 		}
 		std::unordered_map<std::uint32_t, std::vector<cell>> all_cells;
 
