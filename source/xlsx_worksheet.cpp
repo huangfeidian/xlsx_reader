@@ -93,7 +93,7 @@ namespace spiritsaway::xlsx_reader {
 	}
 	void worksheet::after_load_process()
 	{
-		cout<<"load complete for sheet "<< _name<<" with "<< max_rows<<" rows "<<max_columns<<" columns"<<endl;
+		// cout<<"load complete for sheet "<< _name<<" with "<< max_rows<<" rows "<<max_columns<<" columns"<<endl;
 	}
 	worksheet::~worksheet()
 	{

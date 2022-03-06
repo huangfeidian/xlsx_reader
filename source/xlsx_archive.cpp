@@ -31,8 +31,6 @@ namespace spiritsaway::xlsx_reader
 		cur_all_content.reserve(input_file_stream.tellg());
 		input_file_stream.seekg(0, std::ios::beg);
 		cur_all_content.assign(std::istreambuf_iterator<char>(input_file_stream), std::istreambuf_iterator<char>());
-		std::cout << "miniz version " << MZ_VERSION << std::endl;
-		std::cout << "string size " << cur_all_content.size() << " file path " << current_path() << std::endl;
 		mz_zip_archive cur_archive;
 
 		memset(&cur_archive, 0, sizeof(cur_archive));
