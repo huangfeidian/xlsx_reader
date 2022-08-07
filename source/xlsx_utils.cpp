@@ -84,4 +84,42 @@ namespace spiritsaway::xlsx_reader
 	{
 		return column_string_from_index(row_column_tuple.second) + std::to_string(row_column_tuple.first);
 	}
+	std::string_view strip_blank(std::string_view input)
+	{
+		int left = 0;
+		int right = input.size();
+		while (left < right)
+		{
+			auto cur_char = input[left];
+			if (cur_char == ' ' || cur_char == '\t' || cur_char == '\n')
+			{
+				left++;
+			}
+			else
+			{
+				break;
+			}
+		}
+		while (left < right)
+		{
+
+			auto cur_char = input[right - 1];
+			if (cur_char == ' ' || cur_char == '\t' || cur_char == '\n')
+			{
+				right--;
+			}
+			else
+			{
+				break;
+			}
+		}
+		if (left == right)
+		{
+			return std::string_view();
+		}
+		else
+		{
+			return input.substr(left, right - left);
+		}
+	}
 }

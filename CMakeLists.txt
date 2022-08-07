@@ -8,7 +8,6 @@ if(MSVC)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++latest")
 endif(MSVC)
 
-set(CMAKE_DEBUG_POSTFIX "d")
 
 OPTION(WITH_JSON_SUPPORT "use json to view data" ON)
 
@@ -23,6 +22,10 @@ FIND_PACKAGE(typed_string CONFIG REQUIRED)
 
 INCLUDE_DIRECTORIES(${typed_string_include_dirs})
 
+FIND_PACKAGE(any_container CONFIG REQUIRED)
+
+INCLUDE_DIRECTORIES(${any_container_include_dirs})
+
 SET(XLSX_READER_SRC_DIR ${CMAKE_SOURCE_DIR}/source)
 
 SET(PROJECT_HEADER_DIR ${CMAKE_SOURCE_DIR}/include)
@@ -34,7 +37,7 @@ FILE(GLOB_RECURSE XLSX_READER_TEST_LIST ${XLSX_READER_TEST_DIR}/*.cpp)
 INCLUDE_DIRECTORIES(${PROJECT_HEADER_DIR})
 
 ADD_LIBRARY(xlsx_reader  ${XLSX_READER_SRC_LIST})
-target_link_libraries(xlsx_reader PUBLIC miniz::miniz tinyxml2::tinyxml2 typed_string)
+target_link_libraries(xlsx_reader PUBLIC miniz::miniz tinyxml2::tinyxml2 typed_string any_container)
 
 
 

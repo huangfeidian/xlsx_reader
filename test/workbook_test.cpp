@@ -12,19 +12,13 @@ int main(void)
 	//string file_name(argv[1]);
 	string file_name = "../examples/pi100000.xlsx";
 	int wait = 0;
-	cout << "size of typed value is " << sizeof(arena_typed_value) << endl;
 	auto archive_content = make_shared<archive>(file_name);
 	cout << "press any key to load the xlsx file" << endl;
 	cin >> wait;
 	workbook<typed_worksheet> current_workbook(archive_content);
-	
-	
-	cout << "press any key to show memory statistics" << endl;
+	cout << "press any key to read memory consumption" << endl;
 	cin >> wait;
-	for (const auto& one_sheet : current_workbook._worksheets)
-	{
-		cout << "worksheet " << one_sheet->get_name() << " memory consumption is " << one_sheet->memory_consumption() << endl;
-	}
+
 	auto sheet_idx_opt = current_workbook.get_sheet_index_by_name("tile_1");
 	const typed_worksheet& cur_worksheet = current_workbook.get_worksheet(sheet_idx_opt.value());
 	vector<string_view> header_names = { "tile_id", "circle_id", "width", "sequence", "ref_color", "opacity", "filled" };
@@ -33,7 +27,7 @@ int main(void)
 	{
 		std::cout << "head " << header_names[i] << " at " << header_indexes[i] << endl;
 	}
-	auto row_convert_result = cur_worksheet.try_convert_row<string_view, string_view, int, int, string_view, float, bool>(1, header_indexes);
+	auto row_convert_result = cur_worksheet.try_convert_row<string, string, int, int, string, float, bool>(1, header_indexes);
 	auto [opt_tile_id, opt_circle_id, opt_width, opt_seq, opt_ref_color, opt_opacity, opt_filled] = row_convert_result;
 	return 0;
 

@@ -3,8 +3,6 @@
 #include <memory>
 #include "xlsx_archive.h"
 #include <optional>
-#include <typed_string/memory_arena.h>
-#include <typed_string/string_util.h>
 #include <iostream>
 
 namespace spiritsaway::xlsx_reader
@@ -13,7 +11,7 @@ namespace spiritsaway::xlsx_reader
 	class workbook
 	{
 	public:
-		std::vector<std::unique_ptr<worksheet_t>> _worksheets;
+		std::vector<std::unique_ptr<worksheet_t>> m_worksheets;
 		std::vector<sheet_desc> sheet_relations; 
 		
 	private:
@@ -60,11 +58,11 @@ namespace spiritsaway::xlsx_reader
 		}
 		const worksheet_t& get_worksheet(std::uint32_t sheet_idx) const
 		{
-			return *(_worksheets[sheet_idx]);
+			return *(m_worksheets[sheet_idx]);
 		}
 		std::uint32_t get_worksheet_num() const
 		{
-			return _worksheets.size();
+			return m_worksheets.size();
 		}
 		std::string_view workbook_name;
 		std::string_view get_workbook_name() const
@@ -89,6 +87,7 @@ namespace spiritsaway::xlsx_reader
 			archive_content = in_archive;
 	
 			in_archive->get_shared_string_view(string_arena, shared_string);
+			shared_string.insert(shared_string.begin(), std::string_view());
 			for (std::uint32_t i = 0; i < shared_string.size(); i++)
 			{
 				shared_string_indexes[shared_string[i]] = i;
@@ -106,8 +105,14 @@ namespace spiritsaway::xlsx_reader
 			for(std::uint32_t i = 0; i < sheet_relations.size(); i++)
 			{
 				auto cur_worksheet = new worksheet_t(get_cells_for_sheet(i + 1), std::get<1>(sheet_relations[i]), std::get<0>(sheet_relations[i]), this);
-				cur_worksheet->after_load_process();
-				_worksheets.emplace_back(cur_worksheet);
+				auto cur_sheet_load_err = cur_worksheet->after_load_process();
+				if (!cur_sheet_load_err.empty())
+				{
+					std::cerr << "load sheet " << cur_worksheet->get_name() << "fail with error " << cur_sheet_load_err << std::endl;
+					delete cur_worksheet;
+					continue;
+				}
+				m_worksheets.emplace_back(cur_worksheet);
 				auto current_sheet_name = cur_worksheet->get_name();
 				sheets_name_map[current_sheet_name] = i;
 			}
@@ -117,29 +122,11 @@ namespace spiritsaway::xlsx_reader
 		friend std::ostream& operator<<(std::ostream& output_stream, const workbook& in_workbook)
 		{
 			output_stream<<"workbook name:"<<string(in_workbook.get_workbook_name())<<std::endl;
-			for(const auto& one_worksheet: in_workbook._worksheets)
+			for(const auto& one_worksheet: in_workbook.m_worksheets)
 			{
 				output_stream<<*one_worksheet<<std::endl;
 			}
 			return output_stream;
-		}
-		std::uint32_t memory_consumption() const
-		{
-			std::uint32_t result = 0;
-			for (const auto& i : _worksheets)
-			{
-				if (i)
-				{
-					result += i->memory_consumption();
-				}
-			}
-			std::cout << "_worksheets memory " << result << std::endl;
-			std::uint32_t ss_size = 0;
-			ss_size = shared_string.capacity() * sizeof(std::string);
-			std::cout << "shared_strings memory " << ss_size << "with size " << shared_string.size() << std::endl;
-			result += ss_size;
-			std::cout << "workbook " << workbook_name << "memory " << result << std::endl;
-			return result;
 		}
 	protected:
 		std::shared_ptr<archive> archive_content;
@@ -151,7 +138,7 @@ namespace spiritsaway::xlsx_reader
 		
 		void after_load_process()
 		{
-			// std::cout<<"Workbook "<<workbook_name<<" total sheets "<<_worksheets.size()<<std::endl;
+			// std::cout<<"Workbook "<<workbook_name<<" total sheets "<<m_worksheets.size()<<std::endl;
 		}
 		std::unordered_map<std::uint32_t, std::vector<cell>> all_cells;
 
@@ -182,12 +169,13 @@ namespace spiritsaway::xlsx_reader
 					}
 
 					std::string_view current_value = cell_node->FirstChildElement("v")->GetText();
-					current_value = spiritsaway::string_util::strip_blank(current_value);
+					current_value = strip_blank(current_value);
 					auto type_attr = cell_node->Attribute("t");
 					std::uint32_t ss_idx = 0;
 					if(type_attr && *type_attr == 's')
 					{
-						ss_idx = std::stoi(std::string(current_value));
+						// 由于我们在前面放了一个空字符串 所以后续的字符串索引都要加1
+						ss_idx = std::stoi(std::string(current_value)) + 1;
 					}
 					else
 					{

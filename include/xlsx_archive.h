@@ -8,8 +8,8 @@
 
 #include <tinyxml2.h>
 
-#include <typed_string/memory_arena.h>
 #include "xlsx_utils.h"
+#include "memory_arena.h"
 
 namespace spiritsaway::xlsx_reader
 {

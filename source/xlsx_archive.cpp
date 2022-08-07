@@ -7,11 +7,11 @@
 #include <streambuf>
 #include <sstream>
 #include <iostream>
-#include <typed_string/string_util.h>
 extern "C"
 {
 #include <miniz/miniz.h>
 }
+
 
 
 
@@ -20,7 +20,6 @@ namespace spiritsaway::xlsx_reader
 	using namespace std;
 	using namespace tinyxml2;
 	using namespace std::filesystem;
-	using namespace spiritsaway::memory;
 	archive::archive(const string& file_name)
 	{
 		cache_flag = false;
@@ -158,7 +157,7 @@ namespace spiritsaway::xlsx_reader
 		}
 		return all_share_strings;
 	}
-	void archive::get_shared_string_view(arena& string_arena, std::vector<std::string_view>& view_vec)
+	void archive::get_shared_string_view(spiritsaway::memory::arena& string_arena, std::vector<std::string_view>& view_vec)
 	{
 		auto shared_string_table_path = "xl/sharedStrings.xml";
 		auto cur_shared_doc = get_xml_document(shared_string_table_path);
@@ -172,7 +171,7 @@ namespace spiritsaway::xlsx_reader
 			if (current_value)
 			{
 				string_view cur_str_view(current_value);
-				cur_str_view = spiritsaway::string_util::strip_blank(cur_str_view);
+				cur_str_view = strip_blank(cur_str_view);
 				auto cur_view_sz = cur_str_view.size();
 				if (cur_view_sz)
 				{

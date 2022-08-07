@@ -9,13 +9,13 @@ namespace spiritsaway::xlsx_reader
 {
 	using json = nlohmann::json;
 	using namespace std;
-	void to_json(json& j, const typed_header& cur_typed_header)
+	void to_json(json& output, const typed_header& cur_typed_header)
 	{
 		json new_j;
 		new_j["name"] = cur_typed_header.header_name;
 		if (cur_typed_header.type_desc)
 		{
-			new_j["type_desc"] = cur_typed_header.type_desc->to_string();
+			new_j["type_desc"] = cur_typed_header.type_desc->encode();
 		}
 		else
 		{
@@ -23,47 +23,40 @@ namespace spiritsaway::xlsx_reader
 		}
 		
 		new_j["comment"] = cur_typed_header.header_comment;
-		j = new_j;
+		output = new_j;
 		return;
 	}
-	void to_json(json& j, const typed_worksheet& cur_worksheet)
+	void to_json(json& output, const typed_worksheet& cur_worksheet)
 	{
 		json new_j;
 		json header_array = json::array();
 		const auto& typed_headers = cur_worksheet.get_typed_headers();
 		for (std::uint32_t i = 1; i < typed_headers.size(); i++)
 		{
-			header_array.push_back(json(*typed_headers[i]));
+			header_array.push_back(json(typed_headers[i]));
 		}
 
 		new_j["headers"] = header_array;
-		new_j["sheet_id"] = cur_worksheet._sheet_id;
-		new_j["sheet_name"] = cur_worksheet._name;
+		new_j["sheet_id"] = cur_worksheet.m_sheet_id;
+		new_j["sheet_name"] = cur_worksheet.m_name;
 		json row_matrix;
-		const auto& all_row_info = cur_worksheet.get_all_typed_row_info();
-		
-		for (auto one_row_ref: all_row_info)
+		for (int i = cur_worksheet.value_begin_row(); i <= cur_worksheet.get_max_row(); i++)
 		{
-			auto&  one_row = one_row_ref.get();
 			json row_j = json::object();
-
-			for (std::uint32_t j = 1; j < one_row.size(); j++)
+			for (int j = 1; j <= cur_worksheet.get_max_column(); j++)
 			{
-				if (one_row[j])
+				const auto& cur_cell_json = cur_worksheet.get_typed_cell_value(i, j);
+				if (!cur_cell_json.is_null())
 				{
-					row_j[std::string((typed_headers[j])->header_name)] = one_row[j]->to_string();
+					row_j[std::string(typed_headers[j].header_name)] = cur_cell_json;
 				}
-				else
-				{
-					row_j[std::string((typed_headers[j])->header_name)] = json();
-				}
-				
 			}
 			row_matrix.push_back(row_j);
 		}
+		
 
 		new_j["matrix"] = row_matrix;
-		j = new_j;
+		output = new_j;
 		return;
 	}
 	template <typename T>
@@ -72,9 +65,9 @@ namespace spiritsaway::xlsx_reader
 		json result;
 		result["sheet_relation"] = in_workbook.sheet_relations;
 		json all_sheets ;
-		for (const auto& i : in_workbook._worksheets)
+		for (const auto& i : in_workbook.m_worksheets)
 		{
-			all_sheets[string(i->_name)] = *i;
+			all_sheets[string(i->m_name)] = *i;
 		}
 		result["sheets"] = all_sheets;
 		result["name"] = in_workbook.workbook_name;
@@ -85,8 +78,8 @@ namespace spiritsaway::xlsx_reader
 	{
 		json new_j;
 		json row_matrix;
-		new_j["sheet_id"] = cur_worksheet._sheet_id;
-		new_j["sheet_name"] = cur_worksheet._name;
+		new_j["sheet_id"] = cur_worksheet.m_sheet_id;
+		new_j["sheet_name"] = cur_worksheet.m_name;
 		const auto& all_row_info = cur_worksheet.get_all_row();
 		for (std::uint32_t i = 0; i < all_row_info.size(); i++)
 		{

@@ -1,6 +1,7 @@
 ﻿#include <xlsx_typed_worksheet.h>
 #include <iostream>
-#include <typed_string/arena_typed_string_parser.h>
+
+#include <sstream>
 
 namespace {
 	using namespace spiritsaway::xlsx_reader;
@@ -9,7 +10,8 @@ namespace {
 }
 namespace spiritsaway::xlsx_reader{
 	using namespace std;
-	typed_header::typed_header(const typed_string_desc* in_type_desc, string_view in_header_name, string_view in_header_comment):type_desc(in_type_desc), header_name(in_header_name), header_comment(in_header_comment)
+	typed_header::typed_header(std::shared_ptr<const typed_string_desc> in_type_desc, string_view in_header_name, string_view in_header_comment)
+		:type_desc(in_type_desc), header_name(in_header_name), header_comment(in_header_comment)
 	{
 
 	}
@@ -20,38 +22,40 @@ namespace spiritsaway::xlsx_reader{
 	}
 
 	
-	bool typed_worksheet::convert_typed_header()
+	std::string typed_worksheet::convert_typed_header()
 	{
-		typed_headers.clear();
-		typed_headers.push_back(nullptr);
+		m_typed_headers.clear();
+		m_typed_headers.push_back(typed_header( {}, {}, {}));
 		int column_idx = 1;
 		if (get_max_row() < 1)
 		{
-			return false;
+			return "invalid max row";
 		}
 		const auto& header_name_row = get_row(1);
 		if (header_name_row.empty())
 		{
-			return false;
+			return "header name row empty";
 		}
+		std::ostringstream oss;
 		for(std::size_t i= 1; i< header_name_row.size(); i++)
 		{			
 			auto cur_header_name = get_cell(1, i);
 			if(cur_header_name.empty())
 			{
-				cerr<<"empty header name at idx "<<i<<endl;
-				return false;
+				oss <<"empty header name at idx "<<i<<endl;
+				return oss.str();
 			}
 
 			auto cur_cell_value = get_cell(2, column_idx);
 
 			if (cur_cell_value.empty())
 			{
-				cerr <<"invalid type desc for header type at column " << i << endl;
+				oss <<"invalid type desc for header type at column " << i << endl;
+				return oss.str();
 			}
-			auto cur_type_desc = typed_string_desc::get_type_from_str(&memory_arena, cur_cell_value);
+			auto cur_type_desc = typed_string_desc::get_type_from_str(cur_cell_value);
 			string_view header_comment = get_cell(3, column_idx);
-			typed_headers.push_back(new typed_header(cur_type_desc, cur_header_name, header_comment));
+			m_typed_headers.push_back(typed_header(cur_type_desc, cur_header_name, header_comment));
 
 			if (column_idx == 1)
 			{
@@ -60,116 +64,147 @@ namespace spiritsaway::xlsx_reader{
 				{
 				case basic_value_type::number_bool:
 				case basic_value_type::number_float:
-				case basic_value_type::number_double:
-				case basic_value_type::comment:
 				case basic_value_type::list:
 				case basic_value_type::tuple:
-					cerr << "first column value type should be int or string" << endl;
-					return false;
+					oss << "first column value type should be int or string" << endl;
+					return oss.str();
 				default:
 					break;
 				}
 			}
 			if (get_header_idx(cur_header_name) != 0)
 			{
-				cerr << "duplicated header name " << cur_header_name << endl;
+				oss << "duplicated header name " << cur_header_name << endl;
+				return oss.str();
 			}
 			header_column_index[cur_header_name] = column_idx;
 			column_idx += 1;
 		}
-		return true;
+		return {};
 	}
 	std::uint32_t typed_worksheet::value_begin_row() const
 	{
+		// 第一行 名字
+		// 第二行 格式
+		// 第三行 注释
 		return 4;
 	}
-	void typed_worksheet::convert_cell_to_arena_typed_value()
+	std::string typed_worksheet::convert_cells_to_json()
 	{
-		arena_typed_string_parser cur_parser(memory_arena);
-		all_cell_values.clear();
+		m_cell_json_values.clear();
 		auto value_begin_row_idx = value_begin_row();
 		const auto& all_row_info = get_all_row();
+		// 默认第0个是无效数据
+		m_cell_json_values.emplace_back();
 		if (value_begin_row_idx > max_rows)
 		{
-			all_cell_values.emplace_back();
-			return;
+			return {};
 		}
-		all_cell_values.reserve(1 + max_rows - value_begin_row_idx);
-		// 默认第一行是无效数据
-		all_cell_values.emplace_back();
-		for (std::uint32_t i = value_begin_row_idx; i < all_row_info.size(); i++)
-		{
-			all_cell_values.emplace_back(all_row_info[i].size());
-		}
+		m_cell_json_values.reserve(2 * (max_rows + 1 - value_begin_row_idx));
+		
+		m_cell_value_indexes = std::vector<std::uint32_t>((max_rows + 1 - value_begin_row_idx) * m_typed_headers.size(), 0);
+		std::unordered_map<std::uint32_t, std::uint32_t> temp_map_from_ss_idx_to_json_idx;
+		temp_map_from_ss_idx_to_json_idx[std::numeric_limits<std::uint32_t>::max()] = 0;
+		std::ostringstream oss;
 		for (std::uint32_t i = value_begin_row(); i < all_row_info.size(); i++)
 		{
 			for (std::uint32_t j = 1; j < all_row_info[i].size(); j++)
 			{
-				string_view cur_cell = get_cell(i, j);
-				if (cur_cell.empty())
+				auto cur_cell_value_idx = get_cell_value_index_pos(i, j);
+				auto cur_cell_ss_idx = get_cell_shared_string_idx(i, j);
+				if (cur_cell_ss_idx == std::numeric_limits<std::uint32_t>::max())
 				{
 					continue;
 				}
-				
-				auto new_typed_value = memory_arena.get<arena_typed_value>(1);
-				
-				if (cur_parser.parse_value_with_type(typed_headers[j]->type_desc, cur_cell, *new_typed_value))
+				auto cur_json_map_iter = temp_map_from_ss_idx_to_json_idx.find(cur_cell_ss_idx);
+				if (cur_json_map_iter != temp_map_from_ss_idx_to_json_idx.end())
 				{
-					all_cell_values[i - value_begin_row_idx + 1][j] = new_typed_value;
+					m_cell_value_indexes[cur_cell_value_idx] = cur_json_map_iter->second;
+					continue;
 				}
-				
+				string_view cur_cell_str = get_cell(i, j);
+				if (cur_cell_str.empty())
+				{
+					continue;
+				}
+				std::string temp_extend_str;
+				if (!json::accept(cur_cell_str))
+				{
+					oss << "\"" << cur_cell_str << "\"";
+					temp_extend_str = oss.str();
+					cur_cell_str = temp_extend_str;
+					oss.clear();
+					oss.str("");
+				}
+				if (!json::accept(cur_cell_str))
+				{
+					oss << "cant convert cell (" << i << ", " << j << ") with value " << cur_cell_str << " to json" << std::endl;
+					return oss.str();
+				}
+				auto cur_cell_json = json::parse(cur_cell_str);
+				if (!m_typed_headers[j].type_desc->validate(cur_cell_json))
+				{
+					bool check_fail = true;
+					if (m_typed_headers[j].type_desc->m_type == basic_value_type::number_bool)
+					{
+						// excel 会把true false 自动转换为1 0
+						if (cur_cell_json.is_number_unsigned())
+						{
+							auto cur_cell_int_json = cur_cell_json.get<std::uint32_t>();
+							if (cur_cell_int_json == 0)
+							{
+								cur_cell_json = false;
+								check_fail = false;
+							}
+							else if (cur_cell_int_json == 1)
+							{
+								cur_cell_json = true;
+								check_fail = false;
+							}
+						}
+					}
+					if (check_fail)
+					{
+						oss << "cant validate cell (" << i << "," << j << ") with value " << cur_cell_str << " for header type " << m_typed_headers[i].type_desc->encode() << std::endl;
+						return oss.str();
+					}
+					
+				}
+				m_cell_json_values.push_back(cur_cell_json);
+				m_cell_value_indexes[cur_cell_value_idx] = m_cell_json_values.size() - 1;
+				temp_map_from_ss_idx_to_json_idx[cur_cell_ss_idx] = m_cell_json_values.size() - 1;
 			}
-			if (all_cell_values[i - value_begin_row_idx + 1][1]->type_desc)
-			{
-				_indexes[(all_cell_values[i - value_begin_row_idx + 1][1])] = i - value_begin_row_idx + 1;
-			}
+			
 		}
+		return {};
 	}
 	typed_worksheet::typed_worksheet(const vector<cell>& all_cells, uint32_t in_sheet_id, string_view in_sheet_name, const workbook<typed_worksheet>* in_workbook)
 	: worksheet(all_cells, in_sheet_id, in_sheet_name, reinterpret_cast<const workbook<worksheet>*>(in_workbook))
-	, memory_arena(4 * 1024)
 	{
 
 	}
 	const workbook<typed_worksheet>* typed_worksheet::get_workbook() const
 	{
-		return reinterpret_cast<const workbook<typed_worksheet>*>(_workbook);
+		return reinterpret_cast<const workbook<typed_worksheet>*>(m_workbook);
 	}
-	void typed_worksheet::after_load_process()
+	std::string typed_worksheet::after_load_process()
 	{
-		if (convert_typed_header())
+		auto temp_err = convert_typed_header();
+		if(!temp_err.empty() )
 		{
-			convert_cell_to_arena_typed_value();
+			return temp_err;
 		}
-		else
-		{
-			for (auto i : typed_headers)
-			{
-				if (i)
-				{
-					delete i;
-				}
-			}
-			typed_headers.clear();
-			header_column_index.clear();
-		}
+		return convert_cells_to_json();
+		
 		
 	}
 	typed_worksheet::~typed_worksheet()
 	{
-		for (auto i : typed_headers)
-		{
-			if (i)
-			{
-				delete i;
-			}
-		}
 		
-
 	}
-	const vector<const typed_header*>& typed_worksheet::get_typed_headers() const
+	const vector<typed_header>& typed_worksheet::get_typed_headers() const
 	{
-		return typed_headers;
+		return m_typed_headers;
 	}
 	uint32_t typed_worksheet::get_header_idx(string_view header_name) const
 	{
@@ -183,99 +218,35 @@ namespace spiritsaway::xlsx_reader{
 			return header_iter->second;
 		}
 	}
-	uint32_t typed_worksheet::get_indexed_row(const arena_typed_value* first_row_value) const
-	{
-		auto iter = _indexes.find(first_row_value);
-		if(iter == _indexes.end())
-		{
-			return 0;
-		}
-		else
-		{
-			return iter->second;
-		}
-	}
-	const arena_typed_value* typed_worksheet::get_typed_cell_value(uint32_t row_idx, uint32_t column_idx) const
+
+	const json& typed_worksheet::get_typed_cell_value(uint32_t row_idx, uint32_t column_idx) const
 	{
 		if (row_idx == 0 || column_idx == 0)
 		{
-			return nullptr;
+			return m_cell_json_values[0];
 		}
-		if (row_idx >= all_cell_values.size())
+		if (row_idx < value_begin_row() || row_idx > max_rows)
 		{
-			return nullptr;
+			return m_cell_json_values[0];
 		}
-		if (column_idx >= all_cell_values[row_idx].size())
+		if (column_idx > max_columns)
 		{
-			return nullptr;
+			return m_cell_json_values[0];
 		}
-		return all_cell_values[row_idx][column_idx];
+		return m_cell_json_values[m_cell_value_indexes[get_cell_value_index_pos(row_idx, column_idx)]];
 	}
-	const vector<const arena_typed_value*>& typed_worksheet::get_ref_row(string_view sheet_name, const arena_typed_value*  first_row_value) const
-	{
-		auto current_workbook = get_workbook();
-		if(! current_workbook)
-		{
-			return all_cell_values[0];
-		}
-		auto sheet_idx = current_workbook->get_sheet_index_by_name(sheet_name);
-		if(! sheet_idx)
-		{
-			return all_cell_values[0];
-		}
-		const auto& the_worksheet = current_workbook->get_worksheet(sheet_idx.value());
-		auto row_index = the_worksheet.get_indexed_row(first_row_value);
-		if(!row_index)
-		{
-			return all_cell_values[0];
-		}
-		return the_worksheet.get_typed_row(row_index);
-	}
-	const vector<const arena_typed_value*>& typed_worksheet::get_typed_row(uint32_t _idx) const
-	{
-		if (_idx == 0 || _idx >= all_cell_values.size())
-		{
-			return all_cell_values[0];
-		}
-		else
-		{
-			return all_cell_values[_idx];
-		}
-	}
-	std::vector<std::reference_wrapper<const std::vector<const arena_typed_value*>>> typed_worksheet::get_all_typed_row_info() const
-	{
-		std::vector<std::reference_wrapper<const std::vector<const arena_typed_value*>>> result;
-		for (std::size_t i = 1; i < all_cell_values.size(); i++)
-		{
-			const auto& one_row = all_cell_values[i];
-
-			result.push_back(std::ref(one_row));
-		}
-		return result;
-	}
-	std::vector<std::reference_wrapper<const std::vector<const arena_typed_value*>>> typed_worksheet::get_typed_row_with_pred(std::function<bool(const std::vector<const arena_typed_value*>&)> pred) const
-	{
-		std::vector<std::reference_wrapper<const std::vector<const arena_typed_value*>>> result;
-		for (std::size_t i = 1; i < all_cell_values.size(); i++)
-		{
-			const auto& one_row = all_cell_values[i];
-			if (pred(one_row))
-			{
-				result.push_back(std::ref(one_row));
-			}
-		}
-		return result;
-	}
+	
+	
 	bool typed_worksheet::check_header_match(const unordered_map<string_view, const typed_header*>& other_headers, string_view index_column_name) const
 	{
-		if (typed_headers.size() < 2)
+		if (m_typed_headers.size() < 2)
 		{
 			std::cout << "current sheet doesnt has headers " << std::endl;
 			return false;
 		}
-		if(typed_headers[1]->header_name != index_column_name)
+		if(m_typed_headers[1].header_name != index_column_name)
 		{
-			cout << "index column name mismatch input " << index_column_name << " current " << typed_headers[1]->header_name << endl;
+			cout << "index column name mismatch input " << index_column_name << " current " << m_typed_headers[1].header_name << endl;
 			return false;
 		}
 		for(const auto& i : other_headers)
@@ -291,17 +262,17 @@ namespace spiritsaway::xlsx_reader{
 				cout << " cant find header " << i.second->header_name << endl;
 				return false;
 			}
-			if (header_idx >= typed_headers.size())
+			if (header_idx >= m_typed_headers.size())
 			{
 				cout << " cant find header " << i.second->header_name << endl;
 				return false;
 			}
-			if (!typed_headers[header_idx])
+			if (!m_typed_headers[header_idx].type_desc)
 			{
 				cout << " cant find header " << i.second->header_name << endl;
 				return false;
 			}
-			if(!(*typed_headers[header_idx] == *i.second))
+			if(!(m_typed_headers[header_idx] == *i.second))
 			{
 				cout << "header type mismatch for  " << i.second->header_name << endl;
 				return false;
@@ -330,17 +301,17 @@ namespace spiritsaway::xlsx_reader{
 
 	}
 	
-	vector<uint32_t> typed_worksheet::get_header_index_vector(const vector<string_view>& header_names) const
+	std::vector<std::uint32_t> typed_worksheet::get_header_index_vector(const std::vector<std::string_view>& header_names) const
 	{
-		vector<uint32_t> result;
+		std::vector<std::uint32_t> result;
 		for (const auto& i : header_names)
 		{
 			result.push_back(get_header_idx(i));
 		}
 		return result;
 	}
-	std::uint32_t typed_worksheet::memory_consumption() const
+	std::uint32_t typed_worksheet::get_cell_value_index_pos(std::uint32_t row_idx, std::uint32_t column_idx) const
 	{
-		return memory_arena.consumption() + worksheet::memory_consumption();
+		return (row_idx - value_begin_row()) * max_columns + column_idx;
 	}
 }

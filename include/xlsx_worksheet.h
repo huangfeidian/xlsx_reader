@@ -12,10 +12,10 @@ namespace spiritsaway::xlsx_reader
 	{
 	public:
 
-		const std::string_view _name;
-		const std::uint32_t _sheet_id;
-		const void* _workbook;
-		const std::vector<cell>& _cells;
+		const std::string_view m_name;
+		const std::uint32_t m_sheet_id;
+		const void* m_workbook;
+		const std::vector<cell>& m_cells;
 		std::uint32_t max_rows;
 		std::uint32_t max_columns;
 		
@@ -29,11 +29,11 @@ namespace spiritsaway::xlsx_reader
 		const std::vector<std::vector<std::uint32_t>>& get_all_row() const;
 		const std::vector<std::uint32_t>& get_row(std::uint32_t) const;
 		std::string_view get_cell(std::uint32_t row_idx, std::uint32_t column_idx) const;
+		std::uint32_t get_cell_shared_string_idx(std::uint32_t row_idx, std::uint32_t column_idx) const;
 		friend std::ostream& operator<<(std::ostream& output_steam, const worksheet& in_worksheet);
 		virtual ~worksheet();
-		void after_load_process(); //处理load完xml之后的后处理
+		std::string after_load_process(); //处理load完xml之后的后处理
 		void load_from_cells();
-		virtual std::uint32_t memory_consumption() const;
 		worksheet& operator=(const worksheet& other) = delete;
 		worksheet(const worksheet& other) = delete;
 	private:

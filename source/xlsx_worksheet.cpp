@@ -9,7 +9,7 @@ namespace spiritsaway::xlsx_reader {
 	using namespace std;
 
 	worksheet::worksheet(const vector<cell>& in_all_cells, uint32_t in_sheet_id, string_view in_sheet_name, const workbook<worksheet>* in_workbook)
-	: _cells(in_all_cells), _sheet_id(in_sheet_id), _name(in_sheet_name), _workbook(reinterpret_cast<const void*>(in_workbook))
+	: m_cells(in_all_cells), m_sheet_id(in_sheet_id), m_name(in_sheet_name), m_workbook(reinterpret_cast<const void*>(in_workbook))
 	{
 		load_from_cells();
 	}
@@ -19,7 +19,7 @@ namespace spiritsaway::xlsx_reader {
 		row_info.clear();
 		max_rows = 0;
 		max_columns = 0;
-		for(const auto& one_cell : _cells)
+		for(const auto& one_cell : m_cells)
 		{
 			uint32_t current_row_id = get<0>(one_cell);
 			max_rows = max(current_row_id, max_rows);
@@ -32,7 +32,7 @@ namespace spiritsaway::xlsx_reader {
 		{
 			row_info.emplace_back(max_columns + 1);
 		}
-		for (const auto& one_cell : _cells)
+		for (const auto& one_cell : m_cells)
 		{
 			uint32_t current_row_id = get<0>(one_cell);
 			uint32_t current_column_id = get<1>(one_cell);
@@ -48,6 +48,20 @@ namespace spiritsaway::xlsx_reader {
 	const vector<vector<uint32_t>>& worksheet::get_all_row()const
 	{
 		return row_info;
+	}
+	std::uint32_t worksheet::get_cell_shared_string_idx(std::uint32_t row_idx, std::uint32_t column_idx) const
+	{
+		if (row_idx > max_rows)
+		{
+			return std::numeric_limits<std::uint32_t>::max();
+		}
+		if (column_idx > max_columns)
+		{
+			return std::numeric_limits<std::uint32_t>::max();
+		}
+
+		auto ss_idx = row_info[row_idx][column_idx];
+		return ss_idx;
 	}
 	string_view worksheet::get_cell(uint32_t row_idx, uint32_t column_idx) const
 	{
@@ -65,6 +79,7 @@ namespace spiritsaway::xlsx_reader {
 		return the_workbook->get_shared_string(ss_idx);
 	}
 
+
 	uint32_t worksheet::get_max_row() const
 	{
 		return max_rows;
@@ -75,11 +90,11 @@ namespace spiritsaway::xlsx_reader {
 	}
 	string_view worksheet::get_name() const
 	{
-		return _name;
+		return m_name;
 	}
 	ostream& operator<<(ostream& output_stream, const worksheet& in_worksheet)
 	{
-		output_stream<<"worksheet name: "<< in_worksheet.get_name()<<", sheet_id: "<<in_worksheet._sheet_id<<endl;
+		output_stream<<"worksheet name: "<< in_worksheet.get_name()<<", sheet_id: "<<in_worksheet.m_sheet_id<<endl;
 		const auto& all_row_info = in_worksheet.get_all_row();
 		for (std::uint32_t i = 1; i < all_row_info.size(); i++)
 		{
@@ -91,9 +106,10 @@ namespace spiritsaway::xlsx_reader {
 		}
 		return output_stream;
 	}
-	void worksheet::after_load_process()
+	std::string worksheet::after_load_process()
 	{
 		// cout<<"load complete for sheet "<< _name<<" with "<< max_rows<<" rows "<<max_columns<<" columns"<<endl;
+		return {};
 	}
 	worksheet::~worksheet()
 	{
@@ -101,11 +117,6 @@ namespace spiritsaway::xlsx_reader {
 	}
 	const workbook<worksheet>* worksheet::get_workbook() const
 	{
-		return reinterpret_cast<const workbook<worksheet>*>(_workbook);
-	}
-	uint32_t worksheet::memory_consumption() const
-	{
-		uint32_t result = sizeof(uint32_t) * max_columns * max_rows;
-		return result;
+		return reinterpret_cast<const workbook<worksheet>*>(m_workbook);
 	}
 };

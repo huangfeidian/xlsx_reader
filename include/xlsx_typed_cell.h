@@ -7,24 +7,26 @@
 #include <string>
 #include <vector>
 
-#include <typed_string/arena_typed_string.h>
+#include <typed_string/typed_string_desc.h>
+
+#include <any_container/decode.h>
 
 #include "xlsx_types_forward.h"
 
 namespace spiritsaway::xlsx_reader
 {
-	using spiritsaway::container::arena_typed_value;
+	using spiritsaway::container::typed_string_desc;
 	class typed_cell
 	{
 	public:
 		static const int row_begin = 1;
 		static const int column_begin = 1;
-		const arena_typed_value* cur_arena_typed_value;
-		std::uint32_t _row;
-		std::uint32_t _column;
-		typed_cell(std::uint32_t in_row, std::uint32_t in_column, const arena_typed_value* in_value)
-		: _row(in_row)
-		, _column(in_column)
+		const json cur_arena_typed_value;
+		std::uint32_t m_row;
+		std::uint32_t m_column;
+		typed_cell(std::uint32_t in_row, std::uint32_t in_column, const json& in_value)
+		: m_row(in_row)
+		, m_column(in_column)
 		, cur_arena_typed_value(in_value)
 		{
 
@@ -43,7 +45,15 @@ namespace spiritsaway::xlsx_reader
 		}
 		else
 		{
-			return cur_arena_typed_value->expect_value<T>();
+			T result;
+			if (!spiritsaway::serialize::decode(cur_arena_typed_value, result))
+			{
+				return std::nullopt;
+			}
+			else
+			{
+				return std::move(result);
+			}
 		}
 	}
 
