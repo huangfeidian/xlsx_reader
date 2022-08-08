@@ -24,10 +24,11 @@ namespace spiritsaway::xlsx_reader{
 	class typed_worksheet: public worksheet
 	{
 		// 这里我们默认第一行是id 第二行是类型 第三行是注释 第四行开始是数据
-		std::uint32_t get_cell_value_index_pos(std::uint32_t row_idx, std::uint32_t column_idx) const;
+
 		
 	public:
 		typed_worksheet(const std::vector<cell>& all_cells, std::uint32_t in_sheet_id, std::string_view in_sheet_name, const workbook<typed_worksheet>* in_workbook);
+		std::uint32_t get_cell_value_index_pos(std::uint32_t row_idx, std::uint32_t column_idx) const;
 		const json& get_typed_cell_value(std::uint32_t row_idx, std::uint32_t column_idx) const;
 		friend std::ostream& operator<<(std::ostream& output_stream, const typed_worksheet& in_worksheet);
 		
@@ -55,6 +56,20 @@ namespace spiritsaway::xlsx_reader{
 		std::unordered_map<std::string_view, std::uint32_t> header_column_index;
 		std::string after_load_process();
 		std::vector<std::uint32_t> m_cell_value_indexes;
+	public:
+		const std::vector<typed_header>& typed_headers() const
+		{
+			return m_typed_headers;
+		}
+		const std::vector<json>& cell_json_values() const
+		{
+			return m_cell_json_values;
+		}
+		const std::vector<std::uint32_t>& cell_value_indexes() const
+		{
+			return m_cell_value_indexes;
+		}
+	private:
 		std::string convert_cells_to_json();
 		std::string convert_typed_header();
 		
