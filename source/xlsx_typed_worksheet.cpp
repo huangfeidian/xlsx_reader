@@ -50,10 +50,15 @@ namespace spiritsaway::xlsx_reader{
 
 			if (cur_cell_value.empty())
 			{
-				oss <<"invalid type desc for header type at column " << i << endl;
+				oss <<"empty type desc for header type at column " << i << endl;
 				return oss.str();
 			}
 			auto cur_type_desc = typed_string_desc::get_type_from_str(cur_cell_value);
+			if (!cur_type_desc)
+			{
+				oss << "invalid type desc "<< cur_cell_value<<" for header type at column " << i << endl;
+				return oss.str();
+			}
 			string_view header_comment = get_cell(3, column_idx);
 			m_typed_headers.push_back(typed_header(cur_type_desc, cur_header_name, header_comment));
 
