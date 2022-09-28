@@ -170,7 +170,7 @@ namespace spiritsaway::xlsx_reader{
 					}
 					if (check_fail)
 					{
-						oss << "cant validate cell (" << i << "," << j << ") with value " << cur_cell_str << " for header type " << m_typed_headers[i].type_desc->encode() << std::endl;
+						oss << "cant validate cell (" << i << "," << j << ") with value " << cur_cell_str << " for header type " << m_typed_headers[j].type_desc->encode() << std::endl;
 						return oss.str();
 					}
 					
