@@ -149,30 +149,8 @@ namespace spiritsaway::xlsx_reader{
 				auto cur_cell_json = json::parse(cur_cell_str);
 				if (!m_typed_headers[j].type_desc->validate(cur_cell_json))
 				{
-					bool check_fail = true;
-					if (m_typed_headers[j].type_desc->m_type == basic_value_type::number_bool)
-					{
-						// excel 会把true false 自动转换为1 0
-						if (cur_cell_json.is_number_unsigned())
-						{
-							auto cur_cell_int_json = cur_cell_json.get<std::uint32_t>();
-							if (cur_cell_int_json == 0)
-							{
-								cur_cell_json = false;
-								check_fail = false;
-							}
-							else if (cur_cell_int_json == 1)
-							{
-								cur_cell_json = true;
-								check_fail = false;
-							}
-						}
-					}
-					if (check_fail)
-					{
-						oss << "cant validate cell (" << i << "," << j << ") with value " << cur_cell_str << " for header type " << m_typed_headers[j].type_desc->encode() << std::endl;
-						return oss.str();
-					}
+					oss << "cant validate cell (" << i << "," << j << ") with value " << cur_cell_str << " for header type " << m_typed_headers[j].type_desc->encode() << std::endl;
+					return oss.str();
 					
 				}
 				m_cell_json_values.push_back(cur_cell_json);
