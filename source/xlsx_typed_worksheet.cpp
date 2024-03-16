@@ -10,7 +10,7 @@ namespace {
 }
 namespace spiritsaway::xlsx_reader{
 	using namespace std;
-	typed_header::typed_header(std::shared_ptr<const typed_string_desc> in_type_desc, string_view in_header_name, string_view in_header_comment)
+	typed_header::typed_header(std::shared_ptr<const typed_string_desc> in_type_desc, const string& in_header_name, const string& in_header_comment)
 		:type_desc(in_type_desc), header_name(in_header_name), header_comment(in_header_comment)
 	{
 
@@ -26,7 +26,7 @@ namespace spiritsaway::xlsx_reader{
 	{
 		m_typed_headers.clear();
 		m_typed_headers.push_back(typed_header( {}, {}, {}));
-		int column_idx = 1;
+		std::uint32_t column_idx = 1;
 		if (get_max_row() < 1)
 		{
 			return "invalid max row";
@@ -37,9 +37,9 @@ namespace spiritsaway::xlsx_reader{
 			return "header name row empty";
 		}
 		std::ostringstream oss;
-		for(std::size_t i= 1; i< header_name_row.size(); i++)
+		for(std::uint32_t i= 1; i< header_name_row.size(); i++)
 		{			
-			auto cur_header_name = get_cell(1, i);
+			auto cur_header_name = std::string(get_cell(1, i));
 			if(cur_header_name.empty())
 			{
 				oss <<"empty header name at idx "<<i<<endl;
@@ -59,7 +59,7 @@ namespace spiritsaway::xlsx_reader{
 				oss << "invalid type desc "<< cur_cell_value<<" for header type at column " << i << endl;
 				return oss.str();
 			}
-			string_view header_comment = get_cell(3, column_idx);
+			std::string header_comment = std::string(get_cell(3, column_idx));
 			m_typed_headers.push_back(typed_header(cur_type_desc, cur_header_name, header_comment));
 
 			if (column_idx == 1)
@@ -127,7 +127,7 @@ namespace spiritsaway::xlsx_reader{
 					m_cell_value_indexes[cur_cell_value_idx] = cur_json_map_iter->second;
 					continue;
 				}
-				string_view cur_cell_str = get_cell(i, j);
+				string cur_cell_str = std::string(get_cell(i, j));
 				if (cur_cell_str.empty())
 				{
 					continue;
@@ -154,14 +154,14 @@ namespace spiritsaway::xlsx_reader{
 					
 				}
 				m_cell_json_values.push_back(cur_cell_json);
-				m_cell_value_indexes[cur_cell_value_idx] = m_cell_json_values.size() - 1;
-				temp_map_from_ss_idx_to_json_idx[cur_cell_ss_idx] = m_cell_json_values.size() - 1;
+				m_cell_value_indexes[cur_cell_value_idx] = std::uint32_t(m_cell_json_values.size() - 1);
+				temp_map_from_ss_idx_to_json_idx[cur_cell_ss_idx] = std::uint32_t(m_cell_json_values.size() - 1);
 			}
 			
 		}
 		return {};
 	}
-	typed_worksheet::typed_worksheet(const vector<cell>& all_cells, uint32_t in_sheet_id, string_view in_sheet_name, const workbook<typed_worksheet>* in_workbook)
+	typed_worksheet::typed_worksheet(const vector<cell>& all_cells, uint32_t in_sheet_id, const std::string& in_sheet_name, const workbook<typed_worksheet>* in_workbook)
 	: worksheet(all_cells, in_sheet_id, in_sheet_name, reinterpret_cast<const workbook<worksheet>*>(in_workbook))
 	{
 
@@ -189,7 +189,7 @@ namespace spiritsaway::xlsx_reader{
 	{
 		return m_typed_headers;
 	}
-	uint32_t typed_worksheet::get_header_idx(string_view header_name) const
+	uint32_t typed_worksheet::get_header_idx(const string& header_name) const
 	{
 		auto header_iter = header_column_index.find(header_name);
 		if (header_iter == header_column_index.end())
@@ -220,7 +220,7 @@ namespace spiritsaway::xlsx_reader{
 	}
 	
 	
-	bool typed_worksheet::check_header_match(const unordered_map<string_view, const typed_header*>& other_headers, string_view index_column_name) const
+	bool typed_worksheet::check_header_match(const unordered_map<string, const typed_header*>& other_headers, const string& index_column_name) const
 	{
 		if (m_typed_headers.size() < 2)
 		{
@@ -284,7 +284,7 @@ namespace spiritsaway::xlsx_reader{
 
 	}
 	
-	std::vector<std::uint32_t> typed_worksheet::get_header_index_vector(const std::vector<std::string_view>& header_names) const
+	std::vector<std::uint32_t> typed_worksheet::get_header_index_vector(const std::vector<std::string>& header_names) const
 	{
 		std::vector<std::uint32_t> result;
 		for (const auto& i : header_names)

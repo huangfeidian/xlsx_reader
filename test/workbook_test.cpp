@@ -21,7 +21,7 @@ int main(void)
 
 	auto sheet_idx_opt = current_workbook.get_sheet_index_by_name("tile_1");
 	const typed_worksheet& cur_worksheet = current_workbook.get_worksheet(sheet_idx_opt.value());
-	vector<string_view> header_names = { "tile_id", "circle_id", "width", "sequence", "ref_color", "opacity", "filled" };
+	vector<std::string> header_names = { "tile_id", "circle_id", "width", "sequence", "ref_color", "opacity", "filled" };
 	vector<uint32_t> header_indexes = cur_worksheet.get_header_index_vector(header_names);
 	for (std::uint32_t i = 0; i < header_names.size(); i++)
 	{

@@ -12,7 +12,7 @@ namespace spiritsaway::xlsx_reader
 	{
 	public:
 
-		const std::string_view m_name;
+		const std::string m_name;
 		const std::uint32_t m_sheet_id;
 		const void* m_workbook;
 		const std::vector<cell>& m_cells;
@@ -21,10 +21,10 @@ namespace spiritsaway::xlsx_reader
 		
 	public:
 
-		std::string_view get_name() const;
+		const std::string& get_name() const;
 		std::uint32_t get_max_row() const;
 		std::uint32_t get_max_column() const;
-		worksheet(const std::vector<cell>& all_cells, std::uint32_t in_sheet_id, std::string_view in_sheet_name, const workbook<worksheet>* in_workbook);
+		worksheet(const std::vector<cell>& all_cells, std::uint32_t in_sheet_id, const std::string& in_sheet_name, const workbook<worksheet>* in_workbook);
 		const workbook<worksheet>* get_workbook() const;
 		const std::vector<std::vector<std::uint32_t>>& get_all_row() const;
 		const std::vector<std::uint32_t>& get_row(std::uint32_t) const;

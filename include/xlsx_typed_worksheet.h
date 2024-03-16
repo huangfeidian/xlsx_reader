@@ -12,9 +12,9 @@ namespace spiritsaway::xlsx_reader{
 	{
 	public:
 		std::shared_ptr<const typed_string_desc> type_desc;
-		std::string_view header_name;
-		std::string_view header_comment;
-		typed_header(std::shared_ptr<const typed_string_desc> in_type_desc, std::string_view in_header_name, std::string_view in_header_comment);
+		std::string header_name;
+		std::string header_comment;
+		typed_header(std::shared_ptr<const typed_string_desc> in_type_desc, const std::string& in_header_name, const std::string& in_header_comment);
 		friend std::ostream& operator<<(std::ostream& output_stream, const typed_header& in_typed_header);
 		
 		bool operator==(const typed_header& other) const;
@@ -27,7 +27,7 @@ namespace spiritsaway::xlsx_reader{
 
 		
 	public:
-		typed_worksheet(const std::vector<cell>& all_cells, std::uint32_t in_sheet_id, std::string_view in_sheet_name, const workbook<typed_worksheet>* in_workbook);
+		typed_worksheet(const std::vector<cell>& all_cells, std::uint32_t in_sheet_id, const std::string& in_sheet_name, const workbook<typed_worksheet>* in_workbook);
 		std::uint32_t get_cell_value_index_pos(std::uint32_t row_idx, std::uint32_t column_idx) const;
 		const json& get_typed_cell_value(std::uint32_t row_idx, std::uint32_t column_idx) const;
 		friend std::ostream& operator<<(std::ostream& output_stream, const typed_worksheet& in_worksheet);
@@ -38,13 +38,13 @@ namespace spiritsaway::xlsx_reader{
 		const std::vector<typed_header>& get_typed_headers() const;
 		const workbook<typed_worksheet>* get_workbook() const;
 		// 根据表头名字返回列号 如果不存在则返回0
-		std::uint32_t get_header_idx(std::string_view header_name) const;
+		std::uint32_t get_header_idx(const std::string& header_name) const;
 		// 根据第一列的值来获取所属的行
-		bool check_header_match(const std::unordered_map<std::string_view, const typed_header*>& other_headers, std::string_view index_column_name) const;
+		bool check_header_match(const std::unordered_map<std::string, const typed_header*>& other_headers, const std::string& index_column_name) const;
 
 
 
-		std::vector<std::uint32_t> get_header_index_vector(const std::vector<std::string_view>& header_names) const;
+		std::vector<std::uint32_t> get_header_index_vector(const std::vector<std::string>& header_names) const;
 	public:
 		typed_worksheet(const typed_worksheet& other) = delete;
 		typed_worksheet& operator=(const typed_worksheet& other) = delete;
@@ -53,7 +53,7 @@ namespace spiritsaway::xlsx_reader{
 	private:
 		std::vector<typed_header> m_typed_headers;
 		std::vector<json> m_cell_json_values;
-		std::unordered_map<std::string_view, std::uint32_t> header_column_index;
+		std::unordered_map<std::string, std::uint32_t> header_column_index;
 		std::string after_load_process();
 		std::vector<std::uint32_t> m_cell_value_indexes;
 	public:
@@ -99,7 +99,7 @@ namespace spiritsaway::xlsx_reader{
 		template<typename... args>
 		std::tuple<std::optional<args>...> try_convert_row(std::uint32_t row_index, const std::vector<std::uint32_t>& column_index) const
 		{
-			if (row_index == 0 || row_index >= max_rows)
+			if (row_index == 0 || row_index > max_rows)
 			{
 				return std::make_tuple(std::optional<args>()...);
 			}

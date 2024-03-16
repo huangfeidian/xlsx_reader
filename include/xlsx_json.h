@@ -40,10 +40,10 @@ namespace spiritsaway::xlsx_reader
 		new_j["sheet_id"] = cur_worksheet.m_sheet_id;
 		new_j["sheet_name"] = cur_worksheet.m_name;
 		json row_matrix;
-		for (int i = cur_worksheet.value_begin_row(); i <= cur_worksheet.get_max_row(); i++)
+		for (std::uint32_t i = cur_worksheet.value_begin_row(); i <= cur_worksheet.get_max_row(); i++)
 		{
 			json row_j = json::object();
-			for (int j = 1; j <= cur_worksheet.get_max_column(); j++)
+			for (std::uint32_t j = 1; j <= cur_worksheet.get_max_column(); j++)
 			{
 				const auto& cur_cell_json = cur_worksheet.get_typed_cell_value(i, j);
 				if (!cur_cell_json.is_null())
@@ -70,7 +70,7 @@ namespace spiritsaway::xlsx_reader
 			all_sheets[string(i->m_name)] = *i;
 		}
 		result["sheets"] = all_sheets;
-		result["name"] = in_workbook.workbook_name;
+		result["name"] = in_workbook.get_workbook_name();
 		j = result;
 		return;
 	}

@@ -8,7 +8,7 @@
 namespace spiritsaway::xlsx_reader {
 	using namespace std;
 
-	worksheet::worksheet(const vector<cell>& in_all_cells, uint32_t in_sheet_id, string_view in_sheet_name, const workbook<worksheet>* in_workbook)
+	worksheet::worksheet(const vector<cell>& in_all_cells, uint32_t in_sheet_id, const std::string& in_sheet_name, const workbook<worksheet>* in_workbook)
 	: m_cells(in_all_cells), m_sheet_id(in_sheet_id), m_name(in_sheet_name), m_workbook(reinterpret_cast<const void*>(in_workbook))
 	{
 		load_from_cells();
@@ -88,7 +88,7 @@ namespace spiritsaway::xlsx_reader {
 	{
 		return max_columns;
 	}
-	string_view worksheet::get_name() const
+	const std::string& worksheet::get_name() const
 	{
 		return m_name;
 	}

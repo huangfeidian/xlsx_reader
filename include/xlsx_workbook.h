@@ -18,7 +18,8 @@ namespace spiritsaway::xlsx_reader
 		std::vector<std::string_view> shared_string;
 		spiritsaway::memory::arena string_arena;
 		std::unordered_map<std::string_view, std::uint32_t> shared_string_indexes;
-		std::unordered_map<std::string_view, std::uint32_t> sheets_name_map;
+		std::unordered_map<std::string, std::uint32_t> sheets_name_map;
+		std::string workbook_name;
 		std::uint32_t get_index_for_string(std::string_view in_str)
 		{
 			auto iter = shared_string_indexes.find(in_str);
@@ -38,13 +39,13 @@ namespace spiritsaway::xlsx_reader
 				}
 				
 				shared_string.push_back(cur_str_view);
-				shared_string_indexes[cur_str_view] = shared_string.size() - 1;
-				return shared_string.size() - 1;
+				shared_string_indexes[cur_str_view] = std::uint32_t(shared_string.size()) - 1;
+				return std::uint32_t(shared_string.size() - 1);
 			}
 		}
 		
 	public:
-		std::optional<std::uint32_t> get_sheet_index_by_name(std::string_view sheet_name) const
+		std::optional<std::uint32_t> get_sheet_index_by_name(const std::string& sheet_name) const
 		{
 			auto iter = sheets_name_map.find(sheet_name);
 			if(iter == sheets_name_map.end())
@@ -64,8 +65,8 @@ namespace spiritsaway::xlsx_reader
 		{
 			return m_worksheets.size();
 		}
-		std::string_view workbook_name;
-		std::string_view get_workbook_name() const
+		
+		const std::string& get_workbook_name() const
 		{
 			return workbook_name;
 		}
