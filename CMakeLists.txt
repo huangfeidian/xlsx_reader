@@ -39,7 +39,13 @@ INCLUDE_DIRECTORIES(${PROJECT_HEADER_DIR})
 ADD_LIBRARY(xlsx_reader  ${XLSX_READER_SRC_LIST})
 target_link_libraries(xlsx_reader PUBLIC miniz::miniz tinyxml2::tinyxml2 typed_string any_container)
 
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+  set(IS_TOPLEVEL_PROJECT TRUE)
+else()
+  set(IS_TOPLEVEL_PROJECT FALSE)
+endif()
 
+if(IS_TOPLEVEL_PROJECT)
 
 ADD_EXECUTABLE(workbook_test ${XLSX_READER_TEST_DIR}/workbook_test.cpp)
 
@@ -84,3 +90,5 @@ install(DIRECTORY ${PROJECT_HEADER_DIR}/ DESTINATION include/${PROJECT_NAME})
 
 install(EXPORT ${PROJECT_NAME}Targets
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
+
+endif(IS_TOPLEVEL_PROJECT)
