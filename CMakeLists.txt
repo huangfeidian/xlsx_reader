@@ -38,6 +38,7 @@ INCLUDE_DIRECTORIES(${PROJECT_HEADER_DIR})
 
 ADD_LIBRARY(xlsx_reader  ${XLSX_READER_SRC_LIST})
 target_link_libraries(xlsx_reader PUBLIC miniz::miniz tinyxml2::tinyxml2 typed_string any_container)
+target_include_directories(${CMAKE_PROJECT_NAME} INTERFACE $<INSTALL_INTERFACE:include>)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   set(IS_TOPLEVEL_PROJECT TRUE)
